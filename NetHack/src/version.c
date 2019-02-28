@@ -258,8 +258,10 @@ boolean complain;
         || version_data->entity_count != VERSION_SANITY1
         || version_data->struct_sizes1 != VERSION_SANITY2
         || version_data->struct_sizes2 != VERSION_SANITY3) {
-        if (complain)
-            pline("Configuration incompatibility for file \"%s\".", filename);
+        if (complain) {
+        	pline("Should be A: %x B: %x C: %x", VERSION_SANITY1, VERSION_SANITY2, VERSION_SANITY3);
+            pline("       is A: %x B: %x C: %x", version_data->entity_count, version_data->struct_sizes1, version_data->struct_sizes2);
+        }
         return FALSE;
     }
     return TRUE;

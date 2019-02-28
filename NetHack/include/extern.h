@@ -430,7 +430,9 @@ E struct obj *FDECL(realloc_obj,
 E char *FDECL(coyotename, (struct monst *, char *));
 E const char *FDECL(noveltitle, (int *));
 E const char *FDECL(lookup_novel, (const char *, int *));
-
+#ifdef ANDROID
+E void FDECL(and_getlin_log, (const char *,char *));
+#endif
 /* ### do_wear.c ### */
 
 #ifdef USE_TRAMPOLI
@@ -517,6 +519,10 @@ E void FDECL(finish_meating, (struct monst *));
 E boolean FDECL(ghitm, (struct monst *, struct obj *));
 E void FDECL(container_impact_dmg, (struct obj *, XCHAR_P, XCHAR_P));
 E int NDECL(dokick);
+#ifdef ANDROID
+E void NDECL(autokick);
+E int FDECL(dokick_indir, (boolean));
+#endif
 E boolean FDECL(ship_object, (struct obj *, XCHAR_P, XCHAR_P, BOOLEAN_P));
 E void FDECL(obj_delivery, (BOOLEAN_P));
 E schar FDECL(down_gate, (XCHAR_P, XCHAR_P));
@@ -1057,6 +1063,9 @@ E void FDECL(breakchestlock, (struct obj *, BOOLEAN_P));
 E void NDECL(reset_pick);
 E void NDECL(maybe_reset_pick);
 E int FDECL(pick_lock, (struct obj *));
+#ifdef ANDROID
+E boolean NDECL(can_try_force);
+#endif
 E int NDECL(doforce);
 E boolean FDECL(boxlock, (struct obj *, struct obj *));
 E boolean FDECL(doorlock, (struct obj *, int, int));
@@ -1064,6 +1073,10 @@ E int NDECL(doopen);
 E boolean FDECL(stumble_on_door_mimic, (int, int));
 E int FDECL(doopen_indir, (int, int));
 E int NDECL(doclose);
+
+#ifdef ANDROID
+E void FDECL(lock_mouse_cursor, (boolean));
+#endif
 
 #ifdef MAC
 /* These declarations are here because the main code calls them. */
@@ -2776,6 +2789,9 @@ E void FDECL(dump_open_log, (time_t));
 E void NDECL(dump_close_log);
 E void FDECL(dump_redirect, (BOOLEAN_P));
 E void FDECL(dump_forward_putstr, (winid, int, const char*, int));
+#if defined(ANDROID) && defined(DUMPLOG)
+E void FDECL(and_get_dumplog_dir, (char *));
+#endif
 
 /* ### wizard.c ### */
 

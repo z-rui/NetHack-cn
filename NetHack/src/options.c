@@ -81,6 +81,9 @@ static struct Bool_Opt {
     { "autodescribe", &iflags.autodescribe, FALSE, SET_IN_GAME },
     { "autodig", &flags.autodig, FALSE, SET_IN_GAME },
     { "autoopen", &flags.autoopen, TRUE, SET_IN_GAME },
+#ifdef ANDROID
+	{"autokick", &flags.autokick, TRUE, SET_IN_GAME},
+#endif
     { "autopickup", &flags.pickup, TRUE, SET_IN_GAME },
     { "autoquiver", &flags.autoquiver, FALSE, SET_IN_GAME },
 #if defined(MICRO) && !defined(AMIGA)
@@ -102,16 +105,21 @@ static struct Bool_Opt {
 #endif
     { "clicklook", &iflags.clicklook, FALSE, SET_IN_GAME },
     { "cmdassist", &iflags.cmdassist, TRUE, SET_IN_GAME },
-#if defined(MICRO) || defined(WIN32)
+#if defined(MICRO) || defined(WIN32) || defined(ANDROID)
     { "color", &iflags.wc_color, TRUE, SET_IN_GAME }, /*WC*/
 #else /* systems that support multiple terminals, many monochrome */
     { "color", &iflags.wc_color, FALSE, SET_IN_GAME }, /*WC*/
 #endif
     { "confirm", &flags.confirm, TRUE, SET_IN_GAME },
     { "dark_room", &flags.dark_room, TRUE, SET_IN_GAME },
+#ifdef ANDROID
+	{"dumplog", &iflags.dumplog, FALSE, SET_IN_FILE },
+#endif
     { "eight_bit_tty", &iflags.wc_eight_bit_input, FALSE, SET_IN_GAME }, /*WC*/
 #ifdef TTY_GRAPHICS
     { "extmenu", &iflags.extmenu, FALSE, SET_IN_GAME },
+#elif defined(ANDROID)
+    { "extmenu", &iflags.extmenu, TRUE, SET_IN_GAME },
 #else
     { "extmenu", (boolean *) 0, FALSE, SET_IN_FILE },
 #endif
@@ -127,7 +135,11 @@ static struct Bool_Opt {
 #else
     { "flush", (boolean *) 0, FALSE, SET_IN_FILE },
 #endif
+#ifdef ANDROID
+    { "force_invmenu", &iflags.force_invmenu, TRUE, SET_IN_GAME },
+#else
     { "force_invmenu", &iflags.force_invmenu, FALSE, SET_IN_GAME },
+#endif
     { "fullscreen", &iflags.wc2_fullscreen, FALSE, SET_IN_FILE },
     { "goldX", &iflags.goldX, FALSE, SET_IN_GAME },
     { "help", &flags.help, TRUE, SET_IN_GAME },
@@ -151,7 +163,11 @@ static struct Bool_Opt {
     { "mail", (boolean *) 0, TRUE, SET_IN_FILE },
 #endif
     { "mention_walls", &iflags.mention_walls, FALSE, SET_IN_GAME },
+#ifdef ANDROID
+    { "menucolors", &iflags.use_menu_color, TRUE, SET_IN_GAME },
+#else
     { "menucolors", &iflags.use_menu_color, FALSE, SET_IN_GAME },
+#endif
     /* for menu debugging only*/
     { "menu_tab_sep", &iflags.menu_tab_sep, FALSE, SET_IN_WIZGAME },
     { "menu_objsyms", &iflags.menu_head_objsym, FALSE, SET_IN_GAME },
@@ -221,7 +237,7 @@ static struct Bool_Opt {
     { "toptenwin", &iflags.toptenwin, FALSE, SET_IN_GAME },
     { "travel", &flags.travelcmd, TRUE, SET_IN_GAME },
     { "use_darkgray", &iflags.wc2_darkgray, TRUE, SET_IN_FILE },
-#ifdef WIN32
+#if defined(WIN32) || defined(ANDROID)
     { "use_inverse", &iflags.wc_inverse, TRUE, SET_IN_GAME }, /*WC*/
 #else
     { "use_inverse", &iflags.wc_inverse, FALSE, SET_IN_GAME }, /*WC*/
@@ -375,6 +391,7 @@ static struct Comp_Opt {
 #ifdef MSDOS
     { "soundcard", "type of sound card to use", 20, SET_IN_FILE },
 #endif
+    { "statuscolor", "set status colors", PL_PSIZ, SET_IN_FILE },
 #ifdef STATUS_HILITES
     { "statushilites",
       "0=no status highlighting, N=show highlights for N turns",
@@ -671,6 +688,9 @@ initoptions_init()
 
     /* set up the command parsing */
     reset_commands(TRUE); /* init */
+    /* A bug in reset_commands init uses incorrect default for the number_pad option.
+       This additional call will correct that. */
+    reset_commands(FALSE);
 
     /* initialize the random number generator */
     setrandom();
@@ -4367,7 +4387,7 @@ boolean setinitial, setfromfile;
     int i, n;
     char buf[BUFSZ];
 
-    /* Special handling of menustyle, pickup_burden, pickup_types,
+    /* Special handling of dumpfile_format, menustyle, pickup_burden, pickup_types,
      * disclose, runmode, msg_window, menu_headings, sortloot,
      * and number_pad options.
      * Also takes care of interactive autopickup_exception_handling changes.
@@ -6428,6 +6448,7 @@ char *op;
 void
 set_playmode()
 {
+#ifndef ANDROID
     if (wizard) {
         if (authorize_wizard_mode())
             Strcpy(plname, "wizard");
@@ -6438,6 +6459,7 @@ set_playmode()
         iflags.deferred_X = FALSE;
     }
     /* don't need to do anything special for explore mode or normal play */
+#endif
 }
 
 #endif /* OPTION_LISTS_ONLY */
