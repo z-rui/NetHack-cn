@@ -10,7 +10,9 @@
 
 /* #define BETA  */ /* development or beta testing [MRS] */
 
+#ifndef DEBUG
 #define DEBUG 
+#endif
 
 /*
  * Files expected to exist in the playground directory.
@@ -149,6 +151,10 @@ typedef uchar nhsym;
 #endif
 #endif
 
+#ifdef ANDROID
+#include "androidconf.h"
+#endif
+
 /* Displayable name of this port; don't redefine if defined in *conf.h */
 #ifndef PORT_ID
 #ifdef AMIGA
@@ -224,7 +230,7 @@ typedef uchar nhsym;
 #endif
 
 #if defined(X11_GRAPHICS) || defined(QT_GRAPHICS) || defined(GNOME_GRAPHICS) \
-    || defined(WIN32)
+    || defined(WIN32) || defined(ANDROID_GRAPHICS)
 #ifndef USE_TILES
 #define USE_TILES /* glyph2tile[] will be available */
 #endif

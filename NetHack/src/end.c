@@ -55,6 +55,12 @@ STATIC_PTR int FDECL(CFDECLSPEC vanqsort_cmp, (const genericptr,
                                                const genericptr));
 STATIC_DCL int NDECL(set_vanq_order);
 STATIC_DCL void FDECL(list_vanquished, (CHAR_P, BOOLEAN_P));
+#ifdef DUMP_LOG
+extern char msgs[][BUFSZ];
+extern int msgs_count[];
+extern int lastmsg;
+void FDECL(do_vanquished, (int, BOOLEAN_P));
+#endif /* DUMP_LOG */
 STATIC_DCL void FDECL(list_genocided, (CHAR_P, BOOLEAN_P));
 STATIC_DCL boolean FDECL(should_query_disclose_option, (int, char *));
 #ifdef DUMPLOG
@@ -63,7 +69,7 @@ STATIC_DCL void NDECL(dump_plines);
 STATIC_DCL void FDECL(dump_everything, (int, time_t));
 STATIC_DCL int NDECL(num_extinct);
 
-#if defined(__BEOS__) || defined(MICRO) || defined(WIN32) || defined(OS2)
+#if defined(__BEOS__) || defined(MICRO) || defined(WIN32) || defined(OS2) || defined(ANDROID)
 extern void FDECL(nethack_exit, (int));
 #else
 #define nethack_exit exit
@@ -1030,6 +1036,12 @@ int how;
         context.botlx = TRUE;
         bot();
     }
+
+#ifdef ANDROID
+	if(how != TRICKED && how != QUIT && how != PANICKED && how != ESCAPED) {
+		and_you_die();
+	}
+#endif
 
     if (how == ASCENDED || (!killer.name[0] && how == GENOCIDED))
         killer.format = NO_KILLER_PREFIX;

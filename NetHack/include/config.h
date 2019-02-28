@@ -42,6 +42,7 @@
  * Define all of those you want supported in your binary.
  * Some combinations make no sense.  See the installation document.
  */
+#define NOTTYGRAPHICS
 #if !defined(NOTTYGRAPHICS)
 #define TTY_GRAPHICS /* good old tty based graphics */
 #endif
@@ -49,6 +50,7 @@
 /* #define QT_GRAPHICS */    /* Qt interface */
 /* #define GNOME_GRAPHICS */ /* Gnome interface */
 /* #define MSWIN_GRAPHICS */ /* Windows NT, CE, Graphics */
+#define ANDROID_GRAPHICS
 
 /*
  * Define the default window system.  This should be one that is compiled
@@ -114,6 +116,17 @@
 #define HACKDIR "\\nethack"
 #endif
 
+#ifdef ANDROID
+#define ANDROID_GRAPHICS
+#ifdef TTY_GRAPHICS
+#undef TTY_GRAPHICS
+#endif
+#ifdef DEFAULT_WINDOW_SYS
+#undef DEFAULT_WINDOW_SYS
+#endif
+#define DEFAULT_WINDOW_SYS "and"
+#endif
+
 #ifndef DEFAULT_WINDOW_SYS
 #define DEFAULT_WINDOW_SYS "tty"
 #endif
@@ -127,7 +140,7 @@
  * would allow:
  *  xpmtoppm <x11tiles.xpm | pnmscale 1.25 | ppmquant 90 >x11tiles_big.xpm
  */
-/* # define USE_XPM */ /* Disable if you do not have the XPM library */
+#define USE_XPM /* Disable if you do not have the XPM library */
 #ifdef USE_XPM
 #define GRAPHIC_TOMBSTONE /* Use graphical tombstone (rip.xpm) */
 #endif
@@ -190,8 +203,8 @@
 #endif
 
 #ifndef SYSCF
-#define SYSCF                /* use a global configuration */
-#define SYSCF_FILE "sysconf" /* global configuration is in a file */
+//#define SYSCF                /* use a global configuration */
+//#define SYSCF_FILE "sysconf" /* global configuration is in a file */
 #endif
 
 #ifndef GDBPATH
@@ -220,7 +233,7 @@
  *      maximum number of scores to keep, for example) if SYSCF is enabled.
  */
 #ifndef PERSMAX
-#define PERSMAX 3 /* entries per name/uid per char. allowed */
+#define PERSMAX 30 /* entries per name/uid per char. allowed */
 #endif
 #ifndef POINTSMIN
 #define POINTSMIN 1 /* must be > 0 */
@@ -229,7 +242,7 @@
 #define ENTRYMAX 100 /* must be >= 10 */
 #endif
 #ifndef PERS_IS_UID
-#if !defined(MICRO) && !defined(MAC) && !defined(WIN32)
+#if !defined(MICRO) && !defined(MAC) && !defined(WIN32) && !defined(ANDROID)
 #define PERS_IS_UID 1 /* delete for PERSMAX per name; now per uid */
 #else
 #define PERS_IS_UID 0
@@ -254,7 +267,7 @@
  *
  */
 
-#if defined(UNIX) && !defined(ZLIB_COMP) && !defined(COMPRESS)
+#if defined(UNIX) && !defined(ZLIB_COMP) && !defined(COMPRESS) && !defined(ANDROID)
 /* path and file name extension for compression program */
 #define COMPRESS "/usr/bin/compress" /* Lempel-Ziv compression */
 #define COMPRESS_EXTENSION ".Z"      /* compress's extension */
@@ -523,7 +536,7 @@ typedef unsigned char uchar;
    (within the same session) */
 /* #define EDIT_GETLIN */
 
-/* #define DUMPLOG */  /* End-of-game dump logs */
+#define DUMPLOG  /* End-of-game dump logs */
 #ifdef DUMPLOG
 
 #ifndef DUMPLOG_MSG_COUNT

@@ -18,6 +18,7 @@ STATIC_DCL void FDECL(do_oname, (struct obj *));
 STATIC_PTR char *FDECL(docall_xname, (struct obj *));
 STATIC_DCL void NDECL(namefloorobj);
 STATIC_DCL char *FDECL(bogusmon, (char *,char *));
+STATIC_DCL void FDECL(docall_ext, (struct obj *, boolean));
 
 extern const char what_is_an_unknown_object[]; /* from pager.c */
 
@@ -677,12 +678,12 @@ const char *goal;
     }
     cx = ccp->x;
     cy = ccp->y;
-#ifdef CLIPPING
+#if defined(CLIPPING) && !defined(ANDROID)
     cliparound(cx, cy);
 #endif
     curs(WIN_MAP, cx, cy);
     flush_screen(0);
-#ifdef MAC
+#if defined(MAC) || defined(ANDROID)
     lock_mouse_cursor(TRUE);
 #endif
     for (;;) {
@@ -961,7 +962,7 @@ const char *goal;
         curs(WIN_MAP, cx, cy);
         flush_screen(0);
     }
-#ifdef MAC
+#if defined(MAC) || defined(ANDROID)
     lock_mouse_cursor(FALSE);
 #endif
     if (msg_given)
@@ -1390,7 +1391,7 @@ docallcmd()
                 You("know those as well as you ever will.");
 #endif
             } else {
-                docall(obj);
+                docall_ext(obj, FALSE);
             }
         }
         break;
@@ -1444,6 +1445,14 @@ void
 docall(obj)
 struct obj *obj;
 {
+    docall_ext(obj, TRUE);
+}
+
+void
+docall_ext(obj, showlog)
+struct obj *obj;
+boolean showlog;
+{
     char buf[BUFSZ] = DUMMY, qbuf[QBUFSZ];
     char **str1;
 
@@ -1457,6 +1466,11 @@ struct obj *obj;
     else
         (void) safe_qbuf(qbuf, "称作什么给", ":", obj,
                          docall_xname, simpleonames, "thing");
+#ifdef ANDROID
+    if( showlog )
+        and_getlin_log(qbuf, buf);
+    else
+#endif
     getlin(qbuf, buf);
     if (!*buf || *buf == '\033')
         return;

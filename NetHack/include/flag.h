@@ -20,6 +20,9 @@ struct flag {
     boolean autodig;    /* MRKR: Automatically dig */
     boolean autoquiver; /* Automatically fill quiver */
     boolean autoopen;   /* open doors by walking into them */
+#ifdef ANDROID
+	boolean  autokick;	/* Automatically kick doors and force locks */
+#endif
     boolean beginner;
     boolean biff;      /* enable checking for mail */
     boolean bones;     /* allow saving/loading bones */
@@ -83,7 +86,7 @@ struct flag {
        it's probably either 'char' for compactness or 'int' for access,
        but we don't know which and it might be something else anyway;
        flip a coin here and guess 'char' for compactness */
-    char    sortloot; /* 'n'=none, 'l'=loot (pickup), 'f'=full ('l'+invent) */
+    boolean    sortloot; /* 'n'=none, 'l'=loot (pickup), 'f'=full ('l'+invent) */
 #endif
     boolean sortpack;        /* sorted inventory */
     boolean sparkle;         /* show "resisting" special FX (Scott Bigham) */
@@ -309,8 +312,11 @@ struct instance_flags {
     uchar bouldersym; /* symbol for boulder display */
 #ifdef TTY_GRAPHICS
     char prevmsg_window; /* type of old message window to use */
+#endif
+#if defined(TTY_GRAPHICS) || defined(ANDROID)
     boolean extmenu;     /* extended commands use menu interface */
 #endif
+
 #ifdef MFLOPPY
     boolean checkspace; /* check disk space before writing files */
                         /* (in iflags to allow restore after moving
@@ -423,6 +429,9 @@ struct instance_flags {
     short mines_prize_type;     /* luckstone */
     short soko_prize_type1;     /* bag of holding or    */
     short soko_prize_type2;     /* amulet of reflection */
+#ifdef ANDROID
+	boolean dumplog; /* enable/disable dump logs */
+#endif
 };
 
 /*
