@@ -1640,24 +1640,8 @@ boolean via_warning;
         if (mtmp->mundetected
             && (is_hider(mtmp->data) || mtmp->data->mlet == S_EEL)) {
             if (via_warning) {
-                Your("warning senses cause you to take a second %s.",
-                     Blind ? "to check nearby" : "look close by");
-                display_nhwindow(WIN_MESSAGE, FALSE); /* flush messages */
-            }
-            mtmp->mundetected = 0;
-        }
-        newsym(x, y);
-        goto find;
-=======
-    if (M_AP_TYPE(mtmp)) {
-        seemimic(mtmp);
-        found_something = TRUE;
-    } else if (!canspotmon(mtmp)) {
-        if (mtmp->mundetected
-            && (is_hider(mtmp->data) || mtmp->data->mlet == S_EEL)) {
-            if (via_warning) {
-                Your("warning senses cause you to take a second %s.",
-                     Blind ? "to check nearby" : "look close by");
+                Your("警觉让你进一步%s.",
+                     Blind ? "检查附近" : "查看附近");
                 display_nhwindow(WIN_MESSAGE, FALSE); /* flush messages */
             }
             mtmp->mundetected = 0;
@@ -1675,12 +1659,11 @@ boolean via_warning;
         exercise(A_WIS, TRUE);
         if (!canspotmon(mtmp)) {
             map_invisible(x, y);
-            You_feel("an unseen monster!");
+            You_feel("到一个看不见的怪物!");
         } else if (!sensemon(mtmp)) {
-            You("find %s.", mtmp->mtame ? y_monnam(mtmp) : a_monnam(mtmp));
+            You("发现了%s.", mtmp->mtame ? y_monnam(mtmp) : a_monnam(mtmp));
         }
         return 1;
->>>>>>> NetHack-3.6.2
     }
     return 0;
 }

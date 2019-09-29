@@ -8,7 +8,6 @@
 #include <limits.h>
 #endif
 
-STATIC_DCL long FDECL(newuexp, (int));
 STATIC_DCL int FDECL(enermod, (int));
 
 long

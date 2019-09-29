@@ -453,11 +453,7 @@ STATIC_DCL void FDECL(evaluate_and_notify_windowport, (boolean *, int));
 STATIC_DCL void NDECL(init_blstats);
 STATIC_DCL int FDECL(compare_blstats, (struct istat_s *, struct istat_s *));
 STATIC_DCL char *FDECL(anything_to_s, (char *, anything *, int));
-STATIC_OVL int FDECL(percentage, (struct istat_s *, struct istat_s *));
-STATIC_OVL int FDECL(compare_blstats, (struct istat_s *, struct istat_s *));
-STATIC_DCL boolean FDECL(evaluate_and_notify_windowport_field,
-                         (int, boolean *, int, int));
-STATIC_DCL void FDECL(evaluate_and_notify_windowport, (boolean *, int, int));
+STATIC_DCL int FDECL(percentage, (struct istat_s *, struct istat_s *));
 
 #ifdef STATUS_HILITES
 STATIC_DCL void FDECL(s_to_anything, (anything *, char *, int));
@@ -1511,11 +1507,28 @@ int *colorptr;
     if (has_hilite(fldidx)) {
         int dt;
         /* there are hilites set here */
-        int max_pc = 0, min_pc = 100;
-        int max_val = 0, min_val = LARGEST_INT;
-        boolean exactmatch = FALSE;
+        int max_pc = -1, min_pc = 101;
+        /* LARGEST_INT isn't INT_MAX; it fits within 16 bits, but that
+           value is big enough to handle all 'int' status fields */
+        int max_ival = -LARGEST_INT, min_ival = LARGEST_INT;
+        /* LONG_MAX comes from <limits.h> which might not be available for
+           ancient configurations; we don't need LONG_MIN */
+        long max_lval = -LONG_MAX, min_lval = LONG_MAX;
+        boolean exactmatch = FALSE, updown = FALSE, changed = FALSE,
+                perc_or_abs = FALSE;
 
-        hl = blstats[idx][fldidx].thresholds;
+        /* min_/max_ are used to track best fit */
+        for (hl = blstats[0][fldidx].thresholds; hl; hl = hl->next) {
+            dt = initblstats[fldidx].anytype; /* only needed for 'absolute' */
+            /* if we've already matched a temporary highlight, it takes
+               precedence over all persistent ones; we still process
+               updown rules to get the last one which qualifies */
+            if ((updown || changed) && hl->behavior != BL_TH_UPDOWN)
+                continue;
+            /* among persistent highlights, if a 'percentage' or 'absolute'
+               rule has been matched, it takes precedence over 'always' */
+            if (perc_or_abs && hl->behavior == BL_TH_ALWAYS_HILITE)
+                continue;
 
             switch (hl->behavior) {
             case BL_TH_VAL_PERCENTAGE: /* percent values are always ANY_INT */
@@ -1540,7 +1553,7 @@ int *colorptr;
                 } else if (hl->rel == GT_VALUE
                            && (pc > hl->value.a_int)
                            && (hl->value.a_int >= max_pc)) {
-                    merge_bestcolor(&bestcolor, hl->coloridx);
+                    rule = hl;
                     max_pc = hl->value.a_int;
                     perc_or_abs = TRUE;
                 } else if (hl->rel == GE_VALUE
@@ -1558,10 +1571,11 @@ int *colorptr;
                     rule = hl;
                     updown = TRUE;
                 } else if (chg > 0 && hl->rel == GT_VALUE) {
-                    merge_bestcolor(&bestcolor, hl->coloridx);
-                } else if (hl->rel == EQ_VALUE && chg) {
-                    merge_bestcolor(&bestcolor, hl->coloridx);
-                    min_val = max_val = hl->value.a_int;
+                    rule = hl;
+                    updown = TRUE;
+                } else if (chg != 0 && hl->rel == EQ_VALUE && !updown) {
+                    rule = hl;
+                    changed = TRUE;
                 }
                 break;
             case BL_TH_VAL_ABSOLUTE: /* either ANY_INT or ANY_LONG */
@@ -2922,16 +2936,7 @@ int fld;
 const char *str;
 boolean ltok, gtok;
 {
-    int res, ret = -2;
-=======
-STATIC_OVL int
-status_hilite_menu_choose_updownboth(fld, str, ltok, gtok)
-int fld;
-const char *str;
-boolean ltok, gtok;
-{
     int res, ret = NO_LTEQGT;
->>>>>>> NetHack-3.6.2
     winid tmpwin;
     char buf[BUFSZ];
     anything any;
@@ -3075,10 +3080,17 @@ choose_value:
         /* allow user to enter "<50%" or ">50" or just "50"
            or <=50% or >=50 or =50 */
         if (*inp == '>' || *inp == '<' || *inp == '=') {
-            lt_gt_eq = (*inp == '>') ? GT_VALUE
-                : (*inp == '<') ? LT_VALUE : EQ_VALUE;
-            skipltgt = TRUE;
-            *inp = ' ';
+            lt_gt_eq = (*inp == '>') ? ((inp[1] == '=') ? GE_VALUE : GT_VALUE)
+                     : (*inp == '<') ? ((inp[1] == '=') ? LE_VALUE : LT_VALUE)
+                       : EQ_VALUE;
+            *inp++ = ' ';
+            numstart++;
+            if (lt_gt_eq == GE_VALUE || lt_gt_eq == LE_VALUE) {
+                *inp++ = ' ';
+                numstart++;
+            }
+        }
+        if (*inp == '-') {
             inp++;
         } else if (*inp == '+') {
             *inp++ = ' ';

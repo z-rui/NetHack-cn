@@ -393,14 +393,7 @@ Notes:
     more elaborate log file named XLOGFILE containing more information is
     handled similarly.
 
-9.  Some attempt at support for VMS versions earlier than V4.6 has been
-=======
-    to write into it, or new entries will not be appended.  A somewhat
-    more elaborate log file named XLOGFILE containing more information is
-    handled similarly.
-
 10. Some attempt at support for VMS versions earlier than V4.6 has been
->>>>>>> NetHack-3.6.2
     included, but no such obsolete system was available for testing it.
     vmsbuild.com detects the need for the extra support routines and
     arranges automatically for them to be compiled.  The reason that

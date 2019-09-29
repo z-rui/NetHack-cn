@@ -192,7 +192,7 @@ doread()
     known = FALSE;
     if (check_capacity((char *) 0))
         return 0;
-    scroll = getobj(readable, "read");
+    scroll = getobj(readable, "阅读");  //read
     if (!scroll)
         return 0;
 
@@ -2487,12 +2487,12 @@ struct _create_particular_data *d;
         return TRUE;
     }
     d->which = name_to_mon(bufp);
-    if (which >= LOW_PM)
+    if (d->which >= LOW_PM)
         return TRUE; /* got one */
     d->monclass = name_to_monclass(bufp, &d->which);
 
     if (d->which >= LOW_PM) {
-        monclass = MAXMCLASSES; /* matters below */
+        d->monclass = MAXMCLASSES; /* matters below */
         return TRUE;
     } else if (d->monclass == S_invisible) { /* not an actual monster class */
         d->which = PM_STALKER;

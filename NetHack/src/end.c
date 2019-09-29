@@ -1355,7 +1355,7 @@ int how;
         Your("%s, 成为%s...",
              (u.ugrave_arise != PM_GREEN_SLIME)
                  ? "身体死而复生"
-		 : "亡灵持续存在"
+		 : "亡灵持续存在",
              mons[u.ugrave_arise].mname);
         display_nhwindow(WIN_MESSAGE, FALSE);
     }
@@ -1620,7 +1620,10 @@ boolean identified, all_containers, reportempty;
                         Strcpy(&buf[2], doname_with_price(obj));
                         putstr(tmpwin, 0, buf);
                     }
-                    putstr(tmpwin, 0, doname(obj));
+                    unsortloot(&sortedcobj);
+                } else if (cat) {
+                    Strcpy(&buf[2], "Schroedinger's cat!");
+                    putstr(tmpwin, 0, buf);
                 }
                 if (dumping)
                     putstr(0, 0, "");

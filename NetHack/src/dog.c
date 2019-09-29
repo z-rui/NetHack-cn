@@ -306,6 +306,7 @@ boolean with_you;
     struct trap *t;
     xchar xlocale, ylocale, xyloc, xyflags, wander;
     int num_segs;
+    boolean failed_to_place = FALSE;
 
     mtmp->nmon = fmon;
     fmon = mtmp;

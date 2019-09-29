@@ -847,7 +847,7 @@ NEARDATA struct permonst mons[] = {
           NO_ATTK, NO_ATTK, NO_ATTK),
         SIZ(1500, 300, MS_NEIGH, MZ_LARGE), 0, 0,
         M1_ANIMAL | M1_NOHANDS | M1_HERBIVORE,
-        M2_WANDER | M2_STRONG | M2_DOMESTIC, M3_INFRAVISIBLE, CLR_BROWN),
+        M2_WANDER | M2_STRONG | M2_DOMESTIC, M3_INFRAVISIBLE, 7, CLR_BROWN),
     MON("warhorse", "战马", S_UNICORN, LVL(7, 24, 4, 0, 0), (G_GENO | 2),
         A(ATTK(AT_KICK, AD_PHYS, 1, 10), ATTK(AT_BITE, AD_PHYS, 1, 4),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
@@ -2236,7 +2236,7 @@ struct permonst _mons2[] = {
         M2_NOPOLY | M2_HUMAN | M2_MINION | M2_PRINCE | M2_NASTY | M2_COLLECT
             | M2_MAGIC,
         M3_INFRAVISIBLE, 30, CLR_WHITE),
-    MON("soldier", S_HUMAN, LVL(6, 10, 10, 0, -2), (G_SGROUP | G_GENO | 1),
+    MON("soldier", "士兵", S_HUMAN, LVL(6, 10, 10, 0, -2), (G_SGROUP | G_GENO | 1),
         A(ATTK(AT_WEAP, AD_PHYS, 1, 8), NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK,
           NO_ATTK),
         SIZ(WT_HUMAN, 400, MS_SOLDIER, MZ_HUMAN), 0, 0,

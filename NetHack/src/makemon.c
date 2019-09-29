@@ -749,12 +749,6 @@ register struct monst *mtmp;
             struct obj *catcorpse;
 
             otmp = mksobj(LARGE_BOX, FALSE, FALSE);
-            otmp->spe = 1; /* flag for special box */
-            otmp->owt = weight(otmp);
-=======
-            struct obj *catcorpse;
-
-            otmp = mksobj(LARGE_BOX, FALSE, FALSE);
             /* we used to just set the flag, which resulted in weight()
                treating the box as being heavier by the weight of a cat;
                now we include a cat corpse that won't rot; when opening or
@@ -767,7 +761,6 @@ register struct monst *mtmp;
                 add_to_container(otmp, catcorpse);
                 otmp->owt = weight(otmp);
             }
->>>>>>> NetHack-3.6.2
             (void) mpickobj(mtmp, otmp);
         }
         break;
@@ -1683,7 +1676,12 @@ aligntyp atyp;
         return (struct permonst *) 0;
     }
 
-    for (last = first; last < SPECIAL_PM && mons[last].mlet == class; last++)
+    /*  Assumption #2:  monsters of a given class are presented in ascending
+     *                  order of strength.
+     */
+    for (last = first; last < SPECIAL_PM && mons[last].mlet == class; last++) {
+        if (atyp != A_NONE && sgn(mons[last].maligntyp) != sgn(atyp))
+            continue;
         if (mk_gen_ok(last, G_GONE, mask)) {
             /* consider it; don't reject a toostrong() monster if we
                don't have anything yet (num==0) or if it is the same
@@ -1694,7 +1692,19 @@ aligntyp atyp;
                 && mons[last].difficulty > mons[last - 1].difficulty
                 && rn2(2))
                 break;
-            num += mons[last].geno & G_FREQ;
+            if ((k = (mons[last].geno & G_FREQ)) > 0) {
+                /* skew towards lower value monsters at lower exp. levels
+                   (this used to be done in the next loop, but that didn't
+                   work well when multiple species had the same level and
+                   were followed by one that was past the bias threshold;
+                   cited example was sucubus and incubus, where the bias
+                   against picking the next demon resulted in incubus
+                   being picked nearly twice as often as sucubus);
+                   we need the '+1' in case the entire set is too high
+                   level (really low level hero) */
+                nums[last] = k + 1 - (adj_lev(&mons[last]) > (u.ulevel * 2));
+                num += nums[last];
+            }
         }
     }
     if (!num)

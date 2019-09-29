@@ -1993,6 +1993,7 @@ register struct obj *obj;
 int *nochrg; /* alternate return value: 1: no charge, 0: shop owned,        */
 {            /* -1: not in a shop (so should't be formatted as "no charge") */
     struct monst *shkp;
+    struct obj *top;
     xchar x, y;
     boolean freespot;
     long cost = 0L;
@@ -4623,7 +4624,7 @@ register xchar x, y;
         && ESHK(shkp)->shd.y == y
         && shkp->mcanmove && !shkp->msleeping
         && (ESHK(shkp)->debit || ESHK(shkp)->billct || ESHK(shkp)->robbed)) {
-        pline("%s%s 挡住你的路!", Shkname(shkp),
+        pline("%s%s 挡住你的路!", Shknam(shkp),
               Invis ? " 感觉到你的移动并" : "");
         return TRUE;
     }
@@ -4660,7 +4661,7 @@ register xchar x, y;
         && (x == sx - 1 || x == sx + 1 || y == sy - 1 || y == sy + 1)
         && (Invis || carrying(PICK_AXE) || carrying(DWARVISH_MATTOCK)
             || u.usteed)) {
-        pline("%s%s 挡住你的路!", Shkname(shkp),
+        pline("%s%s 挡住你的路!", Shknam(shkp),
               Invis ? " 感觉到你的移动并" : "");
         return TRUE;
     }

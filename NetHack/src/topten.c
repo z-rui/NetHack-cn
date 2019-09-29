@@ -158,9 +158,6 @@ boolean incl_helpless;
             Strcpy(buf, ", while helpless");
         /* else extra death info won't fit, so leave it out */
     }
-    if (killer.former != NO_KILLER_PREFIX)
-        (void) strncat(buf, killed_by_prefix[how], siz - 1);
-    }
 }
 
 STATIC_OVL void

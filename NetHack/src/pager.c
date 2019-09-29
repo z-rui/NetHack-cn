@@ -237,7 +237,7 @@ int x, y, glyph;
                      ? distant_name(otmp, otmp->dknown ? doname_with_price
                                                        : doname_vague_quan)
                      : obj_descr[STRANGE_OBJECT].oc_name);
-        if (fakeobj)
+        if (fakeobj) {
             dealloc_obj(otmp), otmp = 0;
         }
     } else
@@ -448,7 +448,7 @@ char *buf, *monbuf;
     } else if (glyph_is_object(glyph)) {
         look_at_object(buf, x, y, glyph); /* fill in buf[] */
     } else if (glyph_is_trap(glyph)) {
-        int tnum = what_trap(glyph_to_trap(glyph));
+        int tnum = what_trap(glyph_to_trap(glyph), rn2_on_display_rng);
 
         /* Trap detection displays a bear trap at locations having
          * a trapped door or trapped container or both.
@@ -1515,7 +1515,7 @@ doidtrap()
                 if (u.dz < 0 ? is_hole(tt) : tt == ROCKTRAP)
                     break;
             }
-            tt = what_trap(tt);
+            tt = what_trap(tt, rn2_on_display_rng);
             pline("那是%s%s%s.",
                   defsyms[trap_to_defsym(tt)].explanation,
                   !trap->madeby_u ? "" : "由你所",

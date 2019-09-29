@@ -130,6 +130,8 @@ int msgflg; /* positive => no message, zero => message, and */
 
     old_acurr = ACURR(ndx);
     old_abase = ABASE(ndx);
+    old_amax = AMAX(ndx);
+    ABASE(ndx) += incr; /* when incr is negative, this reduces ABASE() */
     if (incr > 0) {
         if (ABASE(ndx) > AMAX(ndx)) {
             AMAX(ndx) = ABASE(ndx);
@@ -176,6 +178,7 @@ int msgflg; /* positive => no message, zero => message, and */
                    base is at minimum and reduction caused max to drop */
                 Your("先天的%s%s了.", attrname[ndx],
                      (incr > 0) ? "提高" : "下降");
+            }
         }
         return FALSE;
     }

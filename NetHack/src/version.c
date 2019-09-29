@@ -44,7 +44,6 @@ char *buf;
     || defined(NETHACK_GIT_SHA) || defined(NETHACK_GIT_BRANCH)
     {
         int c = 0;
-#endif
 #if defined(RUNTIME_PORT_ID)
         char tmpbuf[BUFSZ], *tmp;
 #endif

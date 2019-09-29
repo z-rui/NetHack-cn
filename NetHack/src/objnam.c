@@ -19,6 +19,7 @@ STATIC_DCL void FDECL(releaseobuf, (char *));
 STATIC_DCL char *FDECL(minimal_xname, (struct obj *));
 STATIC_DCL void FDECL(add_erosion_words, (struct obj *, char *));
 STATIC_DCL char *FDECL(doname_base, (struct obj *obj, unsigned));
+STATIC_DCL char *FDECL(just_an, (char *str, const char *));
 STATIC_DCL boolean FDECL(singplur_lookup, (char *, char *, BOOLEAN_P,
                                            const char *const *));
 STATIC_DCL char *FDECL(singplur_compound, (char *));
@@ -565,16 +566,11 @@ unsigned cxn_flags; /* bitmask of CXN_xxx values */
         break;
     case ROCK_CLASS:
         if (typ == STATUE && omndx != NON_PM) {
-            Sprintf(buf, "%s%s之%s%s",
+            Sprintf(buf, "%s%s之%s",
                     (Role_if(PM_ARCHEOLOGIST) && (obj->spe & STATUE_HISTORIC))
                        ? "有历史性的"
                        : "",
                     actualn,
-                    type_is_pname(&mons[omndx])
-                       ? ""
-                       : the_unique_pm(&mons[omndx])
-                          ? "the "
-                          : mons[omndx].mname,
                     mons[omndx].mname);
         } else
             Strcpy(buf, actualn);
@@ -599,8 +595,7 @@ unsigned cxn_flags; /* bitmask of CXN_xxx values */
                 Strcat(buf, actualn);
             } else {
                 Strcat(buf, "被称为");
-                Strcat(buf, un);? ""
-                             : ""
+                Strcat(buf, un);
             }
         } else {
             Strcat(buf, dn);
@@ -1148,13 +1143,12 @@ unsigned doname_flags;
         } else {
             const char *hand_s = body_part(HAND);
 
-            if (bimanual(obj)){
-                //hand_s = makeplural(hand_s);
+            if (bimanual(obj))
+                hand_s = makeplural(hand_s);
             /* note: Sting's glow message, if added, will insert text
                in front of "(weapon in hand)"'s closing paren */
             Sprintf(eos(bp), " (%s在%s上)",
                     (obj->otyp == AKLYS) ? "栓" : "拿", hand_s);
-            }
 
             if (warn_obj_cnt && obj == uwep && (EWarn_of_mon & W_WEP) != 0L) {
                 if (!Blind) /* we know bp[] ends with ')'; overwrite that */
@@ -2502,7 +2496,7 @@ const char *oldstr;
         /* here we cannot find the plural suffix */
     }
 
-bottom:
+ bottom:
     /* if we stripped off a suffix (" of bar" from "foo of bar"),
        put it back now [strcat() isn't actually 100% safe here...] */
     if (excess)
@@ -2531,11 +2525,13 @@ boolean to_plural;            /* true => makeplural, false => makesingular */
         "tegu", "vela", "da", "hy", "lu", "no", "nu", "ra", "ru", "se", "vi",
         "ya", "o", "a",
     };
+    int i, al;
+    const char *endstr, *spot;
 
     if (!basestr || strlen(basestr) < 4)
         return FALSE;
 
-    endstr = eos((char *)basestr);
+    endstr = eos((char *) basestr);
 
     if (to_plural) {
         for (i = 0; i < SIZE(no_men); i++) {
@@ -3584,7 +3580,7 @@ wiztrap:
                       (trap != MAGIC_PORTAL) ? "" : "不知通向哪里");
             } else
                 pline("生成%s 失败.", tname);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
 
         /* furniture and terrain */
@@ -3597,20 +3593,20 @@ wiztrap:
                 lev->blessedftn = 1;
             pline("一个%s喷泉.", lev->blessedftn ? "魔法" : "");
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
         if (!cnbstrcmp(bp, p, "王座")) {
             lev->typ = THRONE;
             pline("一个王座.");
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
         if (!cnbstrcmp(bp, p, "水槽")) {
             lev->typ = SINK;
             level.flags.nsinks++;
             pline("一个水槽.");
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
         /* ("water" matches "potion of water" rather than terrain) */
         if (!cnbstrcmp(bp, p, "水池") || !cnbstrcmp(bp, p, "护城河")) {
@@ -3620,7 +3616,7 @@ wiztrap:
             /* Must manually make kelp! */
             water_damage_chain(level.objects[x][y], TRUE);
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
         if (!cnbstrcmp(bp, p, "熔岩")) { /* also matches "molten lava" */
             lev->typ = LAVAPOOL;
@@ -3629,7 +3625,7 @@ wiztrap:
             if (!(Levitation || Flying))
                 (void) lava_effects();
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
 
         if (!cnbstrcmp(bp, p, "祭坛")) {
@@ -3649,7 +3645,7 @@ wiztrap:
             lev->altarmask = Align2amask(al);
             pline("一个%s祭坛.", align_str(al));
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
 
         if (!cnbstrcmp(bp, p, "坟墓")
@@ -3658,7 +3654,7 @@ wiztrap:
             pline("%s.", IS_GRAVE(lev->typ) ? "一座坟墓"
                                             : "不能把坟墓放这里");
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
 
         if (!cnbstrcmp(bp, p, "树")) {
@@ -3666,14 +3662,14 @@ wiztrap:
             pline("一棵树.");
             newsym(x, y);
             block_point(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
 
         if (!cnbstrcmp(bp, p, "栅栏")) {
             lev->typ = IRONBARS;
             pline("铁栅栏.");
             newsym(x, y);
-            return &zeroobj;
+            return (struct obj *) &zeroobj;
         }
     }
 

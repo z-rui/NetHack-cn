@@ -186,19 +186,12 @@ extern void NDECL(getlock);
 #ifdef USE_ISAAC64
 #undef RANDOM
 #else
-=======
-
-/* Use the high quality random number routines. */
-#ifdef USE_ISAAC64
-#undef RANDOM
-#else
 #define RANDOM
 #define Rand() random()
 #endif
 
 /* Fall back to C's if nothing else, but this really isn't acceptable */
 #if !defined(USE_ISAAC64) && !defined(RANDOM)
->>>>>>> NetHack-3.6.2
 #define Rand() rand()
 #endif
 

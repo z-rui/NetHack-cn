@@ -2624,6 +2624,7 @@ const char *str;
 #ifndef STATUS_HILITES
     register const char *nb;
     register long i, j, n0;
+#endif
 
     HUPSKIP();
     /* Assume there's a real problem if the window is missing --

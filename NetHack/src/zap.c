@@ -2003,6 +2003,7 @@ struct obj *obj, *otmp;
                 struct monst *mtmp;
                 xchar ox, oy;
                 int corpsenm = corpse_revive_type(obj);
+                char *corpsname = cxname_singular(obj);
 
                 /* get corpse's location before revive() uses it up */
                 if (!get_obj_location(obj, &ox, &oy, 0))
@@ -5190,7 +5191,7 @@ int triesleft;
   "输入物品名称, 如 \"探测怪物卷轴\", \"标记为 README 的卷轴\",",
   "\"精灵族秘银胶衣\", 或 \"邪兽之牙\", (不带引号).",
   "",
-  "你可以指定物品的个数, 如 \"1000 金币\", 尽管这个条件未必会被满足.
+  "你可以指定物品的个数, 如 \"1000 金币\", 尽管这个条件未必会被满足.",
   "",
   "你也可以指定各种可以修饰物品的前缀, 如 \"未诅咒的\" 或 \"防锈的\"",
   "或 \"+1\".  大部分显示在物品栏的修饰词都可以被使用.",

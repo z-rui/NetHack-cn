@@ -570,19 +570,8 @@ char ch;
 
     switch (ch) {
     case '\n':
-        console.cursor.Y++;
-=======
-    nhassert(console.cursor.X >= 0 && console.cursor.X < console.width);
-    nhassert(console.cursor.Y >= 0 && console.cursor.Y < console.height);
-
-    boolean inverse = FALSE;
-    cell_t cell;
-
-    switch (ch) {
-    case '\n':
         if (console.cursor.Y < console.height - 1)
             console.cursor.Y++;
->>>>>>> NetHack-3.6.2
     /* fall through */
     case '\r':
         console.cursor.X = 1;

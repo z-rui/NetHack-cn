@@ -1175,25 +1175,6 @@ int n;
             return nh_HI;
         break;
     case ATR_INVERSE:
-        return MR;
-=======
-    case ATR_BLINK:
-    case ATR_ULINE:
-        if (n == ATR_BLINK) {
-            if (MB && *MB)
-                return MB;
-        } else { /* Underline */
-            if (nh_US && *nh_US)
-                return nh_US;
-        }
-        /*FALLTHRU*/
-    case ATR_BOLD:
-        if (MD && *MD)
-            return MD;
-        if (nh_HI && *nh_HI)
-            return nh_HI;
-        break;
-    case ATR_INVERSE:
         if (MR && *MR)
             return MR;
         break;
@@ -1201,7 +1182,6 @@ int n;
         if (MH && *MH)
             return MH;
         break;
->>>>>>> NetHack-3.6.2
     }
     return nulstr;
 }

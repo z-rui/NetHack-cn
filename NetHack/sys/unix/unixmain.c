@@ -15,6 +15,7 @@
 #ifndef O_RDONLY
 #include <fcntl.h>
 #endif
+#include <locale.h>
 
 #if !defined(_BULL_SOURCE) && !defined(__sgi) && !defined(_M_UNIX)
 #if !defined(SUNOS4) && !(defined(ULTRIX) && defined(__GNUC__))
@@ -58,6 +59,7 @@ char *argv[];
     boolean resuming = FALSE; /* assume new game */
     boolean plsel_once = FALSE;
 
+    setlocale(LC_CTYPE, "");
     sys_early_init();
 
 #if defined(__APPLE__)

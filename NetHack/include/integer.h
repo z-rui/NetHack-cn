@@ -50,7 +50,15 @@
 
 #endif /*?__DECC*/
 
-#else /* !C99 */
+#ifdef HAS_STDINT_H
+#include <stdint.h>
+#define SKIP_STDINT_WORKAROUND
+#else /*!stdint*/
+#ifdef HAS_INTTYPES_H
+#include <inttypes.h>
+#define SKIP_STDINT_WORKAROUND
+#endif
+#endif /*?stdint*/
 
 #ifndef SKIP_STDINT_WORKAROUND /* !C99 */
 /*

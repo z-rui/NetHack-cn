@@ -1629,26 +1629,20 @@ build_plselection_prompt(buf, buflen, rolenum, racenum, gendnum, alignnum)
 char *buf;
 int buflen, rolenum, racenum, gendnum, alignnum;
 {
-    const char *defprompt = "Shall I pick a character for you? [ynaq] ";
+    const char *defprompt = "需要我帮你挑选一个角色吗? [ynaq] ";
     int num_post_attribs = 0;
     char tmpbuf[BUFSZ], *p;
 
     if (buflen < QBUFSZ)
         return (char *) defprompt;
 
-    Strcpy(tmpbuf, "Shall I pick ");
+    Strcpy(tmpbuf, "需要我帮助挑选");
     if (racenum != ROLE_NONE || validrole(rolenum))
-        Strcat(tmpbuf, "your ");
-    else
-        Strcat(tmpbuf, "a ");
+        Strcat(tmpbuf, "你的");
     /* <your> */
 
     (void) root_plselection_prompt(eos(tmpbuf), buflen - strlen(tmpbuf),
                                    rolenum, racenum, gendnum, alignnum);
-    /* "Shall I pick a character's role, race, gender, and alignment for you?"
-       plus " [ynaq] (y)" is a little too long for a conventional 80 columns;
-       also, "pick a character's <anything>" sounds a bit stilted */
-    strsubst(tmpbuf, "pick a character", "pick character");
     Sprintf(buf, "%s", s_suffix(tmpbuf));
     /* don't bother splitting caveman/cavewoman or priest/priestess
        in order to apply possessive suffix to both halves, but do

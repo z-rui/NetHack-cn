@@ -185,7 +185,7 @@ you_were()
     if (controllable_poly) {
         int len;
 
-        len = strlen(mons[pm].mname)-strlen("人");
+        len = strlen(mons[u.ulycn].mname)-strlen("人");
         Sprintf(qbuf, "你想变成%.*s吗?",
 	        len, mons[u.ulycn].mname);
         if (!paranoid_query(ParanoidWerechange, qbuf))

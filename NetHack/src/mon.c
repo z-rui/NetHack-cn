@@ -1827,24 +1827,8 @@ struct permonst *mptr; /* reflects mtmp->data _prior_ to mtmp's death */
     if (onmap)
         newsym(mtmp->mx, mtmp->my);
     unstuck(mtmp);
-    fill_pit(mtmp->mx, mtmp->my);
-=======
-    if (onmap || mtmp == level.monsters[0][0]) {
-        if (mtmp->wormno)
-            remove_worm(mtmp);
-        else
-            remove_monster(mtmp->mx, mtmp->my);
-    }
-    if (emits_light(mptr))
-        del_light_source(LS_MONSTER, monst_to_any(mtmp));
-    if (M_AP_TYPE(mtmp))
-        seemimic(mtmp);
-    if (onmap)
-        newsym(mtmp->mx, mtmp->my);
-    unstuck(mtmp);
     if (onmap)
         fill_pit(mtmp->mx, mtmp->my);
->>>>>>> NetHack-3.6.2
 
     if (mtmp->isshk)
         shkgone(mtmp);

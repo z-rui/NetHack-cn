@@ -76,14 +76,6 @@ mswin_display_RIP_window(HWND hWnd)
 
     data = (PNHRIPWindow) GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
-=======
-    HFONT OldFont;
-    MonitorInfo monitorInfo;
-
-    win10_monitor_info(hWnd, &monitorInfo);
-
-    data = (PNHRIPWindow) GetWindowLongPtr(hWnd, GWLP_USERDATA);
-
     data->x = (int)(RIP_OFFSET_X * monitorInfo.scale);
     data->y = (int)(RIP_OFFSET_Y * monitorInfo.scale);
     data->width = (int)(RIP_WIDTH * monitorInfo.scale);
@@ -93,7 +85,6 @@ mswin_display_RIP_window(HWND hWnd)
     data->graveWidth = (int)(RIP_GRAVE_WIDTH * monitorInfo.scale);
     data->graveHeight = (int)(RIP_GRAVE_HEIGHT * monitorInfo.scale);
 
->>>>>>> NetHack-3.6.2
     GetNHApp()->hPopupWnd = hWnd;
     mapWnd = mswin_hwnd_from_winid(WIN_MAP);
     if (!IsWindow(mapWnd))
@@ -180,14 +171,7 @@ NHRIPWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC hdc = BeginPaint(hWnd, &ps);
         cached_font * font = mswin_get_font(NHW_TEXT, ATR_NONE, hdc, FALSE);
 
-        hdc = BeginPaint(hWnd, &ps);
-        OldFont = SelectObject(hdc, mswin_get_font(NHW_TEXT, 0, hdc, FALSE));
-=======
-        HDC hdc = BeginPaint(hWnd, &ps);
-        cached_font * font = mswin_get_font(NHW_TEXT, ATR_NONE, hdc, FALSE);
-
         OldFont = SelectObject(hdc, font->hFont);
->>>>>>> NetHack-3.6.2
         hdcBitmap = CreateCompatibleDC(hdc);
         SetBkMode(hdc, TRANSPARENT);
         GetClientRect(hWnd, &clientrect);

@@ -2106,6 +2106,7 @@ boolean pick;
 
     struct monst *mtmp;
     struct trap *trap = t_at(u.ux, u.uy);
+    int trapflag = iflags.failing_untrap ? FAILEDUNTRAP : 0;
 
     /* prevent recursion from affecting the hero all over again
        [hero poly'd to iron golem enters water here, drown() inflicts
@@ -2529,7 +2530,7 @@ register boolean newlev;
   -1 = do normal pickup
   -2 = loot the monster */
 int
-dopickup()
+pickup_checks()
 {
     /* uswallow case added by GAN 01/29/87 */
     if (u.uswallow) {
@@ -2962,7 +2963,7 @@ boolean k_format;
 int
 weight_cap()
 {
-    long carrcap, save_ELev = ELevitation;
+    long carrcap, save_ELev = ELevitation, save_BLev = BLevitation;
 
     /* boots take multiple turns to wear but any properties they
        confer are enabled at the start rather than the end; that

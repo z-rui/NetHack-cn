@@ -69,14 +69,9 @@ unsigned _stklen = STKSIZ;
 int
 #ifndef __MINGW32__ 
 main(argc, argv)
-=======
-int
-#ifndef __MINGW32__ 
-main(argc, argv)
 #else
 mingw_main(argc, argv)
 #endif
->>>>>>> NetHack-3.6.2
 int argc;
 char *argv[];
 {

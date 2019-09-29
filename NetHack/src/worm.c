@@ -414,7 +414,7 @@ boolean cuttier; /* hit is by wielded blade or axe or by thrown axe */
     wgrowtime[new_wnum] = 0L;    /* trying to call initworm().       */
 
     /* Place the new monster at all the segment locations. */
-    place_wsegs(new_worm);
+    place_wsegs(new_worm, worm);
 
     if (context.mon_moving)
         pline("%s 被切成两半.", Monnam(worm));

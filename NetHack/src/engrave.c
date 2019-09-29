@@ -72,6 +72,7 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
         }
     }
 }
+STATIC_DCL const char *NDECL(blengr);
 
 char *
 random_engraving(outbuf)
@@ -1359,7 +1360,7 @@ const char *str;
     /* Engrave the headstone */
     del_engr_at(x, y);
     if (!str)
-        str = get_rnd_text(EPITAPHFILE, buf);
+        str = get_rnd_text(EPITAPHFILE, buf, rn2);
     make_engr_at(x, y, str, 0L, HEADSTONE);
     return;
 }

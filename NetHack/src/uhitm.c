@@ -969,7 +969,6 @@ int dieroll;
                                            : (cnt > 1L) ? "一些" : "一个";
 
                         You("用%s蛋打%s.", eggp, mon_nam(mon));
-                            plur(cnt));
                         if (touch_petrifies(mdat) && !stale_egg(obj)) {
                             pline_The("蛋不再活着...");
                             if (obj->timed)

@@ -918,16 +918,9 @@ pronoun_gender(mtmp, override_vis)
 register struct monst *mtmp;
 boolean override_vis; /* if True then 'no it' unless neuter */
 {
-    if (is_neuter(mtmp->data) || !canspotmon(mtmp))
-=======
-pronoun_gender(mtmp, override_vis)
-register struct monst *mtmp;
-boolean override_vis; /* if True then 'no it' unless neuter */
-{
     if (!override_vis && !canspotmon(mtmp))
         return 2;
     if (is_neuter(mtmp->data))
->>>>>>> NetHack-3.6.2
         return 2;
     return (humanoid(mtmp->data) || (mtmp->data->geno & G_UNIQ)
             || type_is_pname(mtmp->data)) ? (int) mtmp->female : 2;

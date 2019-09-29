@@ -924,7 +924,7 @@ register struct attack *mattk;
 {
     struct permonst *mdat = mtmp->data;
     int uncancelled, ptmp;
-    int dmg, armpro, permdmg;
+    int dmg, armpro, permdmg, tmphp;
     char buf[BUFSZ];
     struct permonst *olduasmon = youmonst.data;
     int res;
@@ -1399,7 +1399,7 @@ register struct attack *mattk;
         hitmsg(mtmp, mattk);
         if (uncancelled) {
             if (flags.verbose)
-                Your("位置突然似乎%s不确定!"),
+                Your("位置突然似乎%s不确定!",
                      (Teleport_control && !Stunned && !unconscious()) ? ""
                      : "很");
             tele();
@@ -2426,7 +2426,7 @@ struct monst *mon;
     boolean fem = (mon->data == &mons[PM_SUCCUBUS]); /* otherwise incubus */
     boolean seewho, naked; /* True iff no armor */
     int attr_tot, tried_gloves = 0;
-    char qbuf[QBUFSZ];
+    char qbuf[QBUFSZ], Who[QBUFSZ];
 
     if (mon->mcan || mon->mspec_used) {
         pline("%s 的行为好像%s得了%s头痛.", Monnam(mon),
@@ -2557,7 +2557,7 @@ struct monst *mon;
     if (!tried_gloves)
         mayberem(mon, Who, uarmg, "手套");
     mayberem(mon, Who, uarms, "盾牌");
-    mayberem(uarmh, helm_simple_name(uarmh));
+    mayberem(mon, Who, uarmh, helm_simple_name(uarmh));
     if (!uarmc && !uarm)
         mayberem(mon, Who, uarmu, "衬衫");
 

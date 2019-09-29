@@ -779,12 +779,6 @@ to support:
   |  windowborders     | WC2_WINDOWBORDERS  | wc2_windowborders  |int     |
   +--------------------+--------------------+--------------------+--------+
 
-=======
-  |  term_cols         | WC2_TERM_COLS      | wc2_term_cols      |int     |
-  |  term_rows         | WC2_TERM_ROWS      | wc2_term_rows      |int     |
-  |  windowborders     | WC2_WINDOWBORDERS  | wc2_windowborders  |int     |
-  +--------------------+--------------------+--------------------+--------+
-
   more wincap2 for STATUS_HILITES support and control
   +--------------------------------- +---------------------------+
   | To inform the game engine        |                           |
@@ -799,7 +793,6 @@ to support:
   |          fields should be redone |                           |
   +----------------------------------+---------------------------+
 
->>>>>>> NetHack-3.6.2
 align_message	-- where to place message window (top, bottom, left, right)
 align_status	-- where to place status display (top, bottom, left, right).
 ascii_map	-- port should display an ascii map if it can.

@@ -143,7 +143,7 @@ struct obj *wep;
     if (!wep) {
         /* No weapon */
         if (uwep) {
-            You("are empty %s.", body_part(HANDED));
+            You("空%s了.", body_part(HANDED));
             setuwep((struct obj *) 0);
             res++;
         } else

@@ -229,16 +229,7 @@ int x, y;
         if (!mtmp || is_undead(mtmp->data))
             obj_no_longer_held(otmp);
 
-        otmp->owornmask = 0;
-=======
-        /* when turning into green slime, all gear remains held;
-           other types "arise from the dead" do aren't holding
-           equipment during their brief interval as a corpse */
-        if (!mtmp || is_undead(mtmp->data))
-            obj_no_longer_held(otmp);
-
         otmp->owornmask = 0L;
->>>>>>> NetHack-3.6.2
         /* lamps don't go out when dropped */
         if ((cont || artifact_light(otmp)) && obj_is_burning(otmp))
             end_burn(otmp, TRUE); /* smother in statue */

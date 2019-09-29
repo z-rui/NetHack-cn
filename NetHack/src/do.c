@@ -139,6 +139,8 @@ const char *verb;
     struct trap *t;
     struct monst *mtmp;
     struct obj *otmp;
+    boolean tseen;
+    int ttyp = NO_TRAP;
 
     if (obj->where != OBJ_FREE)
         panic("flooreffects: obj not free");
@@ -618,7 +620,7 @@ register struct obj *obj;
             /* doname can call s_suffix, reusing its buffer */
             Strcpy(monbuf, s_suffix(mon_nam(u.ustuck)));
             onam_p = is_unpaid(obj) ? yobjnam(obj, (char *) 0) : doname(obj);
-            You("把 %s 扔进 %s %s.", doname(obj), buf,
+            You("把 %s 扔进 %s %s.", onam_p, monbuf,
                 mbodypart(u.ustuck, STOMACH));
         }
     } else {
@@ -1743,7 +1745,7 @@ struct obj *corpse;
     where = corpse->where;
     is_uwep = (corpse == uwep);
     chewed = (corpse->oeaten != 0);
-    Strcpy(cname, corpse_xname(corpse
+    Strcpy(cname, corpse_xname(corpse,
                                chewed ? "全身被咬的" : (const char *) 0,
                                CXN_SINGULAR));
     mcarry = (where == OBJ_MINVENT) ? corpse->ocarry : 0;

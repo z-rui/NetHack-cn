@@ -866,7 +866,7 @@ long timeout;
                 You_see("%s %s出你的背包!", monnambuf,
                         locomotion(mon->data, "掉落"));
             if (yours) {
-                pline("%s哭声听起来像在叫 \ %s%s\"",
+                pline("%s哭声听起来像在叫 \"%s%s\"",
                       siblings ? "它们的" : "它的",
                       flags.female ? "妈妈" : "爸爸", egg->spe ? "." : "?");
             } else if (mon->data->mlet == S_DRAGON && !Deaf) {

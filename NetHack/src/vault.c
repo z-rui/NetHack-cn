@@ -66,19 +66,7 @@ boolean forceshow;
         if ((DEADMONSTER(grd) || !in_fcorridor(grd, u.ux, u.uy))
             && egrd->gddone)
             forceshow = TRUE;
-        if ((u.ux == fcx && u.uy == fcy && grd->mhp > 0)
-=======
-    /* note: guard remains on 'fmons' list (alive or dead, at off-map
-       coordinate <0,0>), until temporary corridor from vault back to
-       civilization has been removed */
-    while ((fcbeg = egrd->fcbeg) < egrd->fcend) {
-        fcx = egrd->fakecorr[fcbeg].fx;
-        fcy = egrd->fakecorr[fcbeg].fy;
-        if ((DEADMONSTER(grd) || !in_fcorridor(grd, u.ux, u.uy))
-            && egrd->gddone)
-            forceshow = TRUE;
         if ((u.ux == fcx && u.uy == fcy && !DEADMONSTER(grd))
->>>>>>> NetHack-3.6.2
             || (!forceshow && couldsee(fcx, fcy))
             || (Punished && !carried(uball) && uball->ox == fcx
                 && uball->oy == fcy))
@@ -1091,7 +1079,7 @@ boolean silently;
 
     if (u.uinvault) {
         if (!silently)
-            Your("%ld %s 进入了魔法记忆金库.", umoney,
+            Your("%ld %s 进入了魔法记忆金库.",
                  umoney, currency(umoney));
         gx = u.ux;
         gy = u.uy;

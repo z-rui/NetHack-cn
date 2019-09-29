@@ -897,6 +897,7 @@ struct obj *obj;
 xchar x, y;
 boolean broken;
 {
+    boolean costly_xy;
     struct monst *shkp = shop_keeper(*u.ushops);
 
     if (!shkp)

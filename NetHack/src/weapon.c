@@ -433,6 +433,7 @@ struct monst *magr UNUSED;
 struct monst *mdef;
 long silverhit;
 {
+    char rings[20]; /* plenty of room for "rings" */
     int ltyp = ((uleft && (silverhit & W_RINGL) != 0L)
                 ? uleft->otyp : STRANGE_OBJECT),
         rtyp = ((uright && (silverhit & W_RINGR) != 0L)
@@ -450,8 +451,9 @@ long silverhit;
            silver [see hmonas(uhitm.c) for explanation of 'multi_claw'] */
         both = ((ltyp == rtyp && uleft->dknown == uright->dknown)
                 || (l_ag && r_ag));
-        Your("%s戒指%s了%s!",
-             (l_ag || r_ag) ? "silver "
+        Sprintf(rings, "戒指%s", both ? "" : "");
+        Your("%s%s%s了%s!",
+             (l_ag || r_ag) ? "银"
              : both ? "两个"
                : ((silverhit & W_RINGL) != 0L) ? "左手"
                  : "右手",

@@ -166,6 +166,8 @@ E int NDECL(stat_cap_indx);
 E int NDECL(stat_hunger_indx);
 E const char *FDECL(bl_idx_to_fldname, (int));
 #ifdef STATUS_HILITES
+E void NDECL(status_eval_next_unhilite);
+E void NDECL(reset_status_hilites);
 E boolean FDECL(parse_status_hl1, (char *op, BOOLEAN_P));
 E void FDECL(status_notify_windowport, (BOOLEAN_P));
 E void NDECL(clear_status_hilites);

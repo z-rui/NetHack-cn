@@ -3313,7 +3313,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0', "migratemons", "migratemons", "migrate N random monsters",
             wiz_migrate_mons, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #endif
-    { M('m'), "monster", "use monster's special ability",
+    { M('m'), "monster", "怪物能力", "使用怪物的特殊能力",
             domonability, IFBURIED | AUTOCOMPLETE },
     { 'N', "name", "命名", "给怪物或物品命名",
             docallcmd, IFBURIED | AUTOCOMPLETE },
@@ -3365,7 +3365,7 @@ struct ext_func_tab extcmdlist[] = {
     { '^', "seetrap", "查看陷阱", "显示邻近的陷阱的类型", doidtrap, IFBURIED },
     { WEAPON_SYM, "seeweapon", "查看武器", "显示装备的武器",
             doprwep, IFBURIED },
-    { '!', "shell", "do a shell escape",
+    { '!', "shell", "外壳", "做一个shell转义",
             dosh_core, IFBURIED | GENERALCMD
 #ifndef SHELL
                        | CMD_NOT_AVAILABLE
@@ -3383,7 +3383,7 @@ struct ext_func_tab extcmdlist[] = {
     { 'x', "swap", "交换武器", "交换主武器和副武器", doswapweapon },
     { 'T', "takeoff", "脱下", "脱下一件盔甲", dotakeoff },
     { 'A', "takeoffall", "全部脱下", "脱下所有盔甲", doddoremarm },
-    { C('t'), "teleport", "传送", "在这一层里传送", dotele, IFBURIED },
+    { C('t'), "teleport", "传送", "在这一层里传送", dotelecmd, IFBURIED },
     { '\0', "terrain", "地图显示", "无障碍显示地图",
             doterrain, IFBURIED | AUTOCOMPLETE },
     { '\0', "therecmdmenu", "那里可执行",
@@ -3416,7 +3416,7 @@ struct ext_func_tab extcmdlist[] = {
     { 'w', "wield", "持握", "装备武器", dowield },
     { M('w'), "wipe", "擦脸", "擦你的脸", dowipe, AUTOCOMPLETE },
 #ifdef DEBUG
-    { '\0', "wizbury", "bury objs under and around you",
+    { '\0', "wizbury", "wizbury", "bury objs under and around you",
             wiz_debug_cmd_bury, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
 #endif
     { C('e'), "wizdetect", "wizdetect", "在小范围内显示隐藏的东西",

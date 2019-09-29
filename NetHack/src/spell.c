@@ -886,7 +886,7 @@ int spell;
 boolean atme;
 {
     int energy, damage, chance, n, intell;
-    int skill, role_skill, res = 0;
+    int otyp, skill, role_skill, res = 0;
     boolean confused = (Confusion != 0);
     boolean physical_damage = FALSE;
     struct obj *pseudo;
@@ -1037,7 +1037,7 @@ boolean atme;
     skill = spell_skilltype(otyp);
     role_skill = P_SKILL(skill);
 
-    switch (pseudo->otyp) {
+    switch (otyp) {
     /*
      * At first spells act as expected.  As the hero increases in skill
      * with the appropriate spell type, some spells increase in their
