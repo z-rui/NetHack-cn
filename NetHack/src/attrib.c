@@ -25,7 +25,7 @@ static const struct innate {
     const char *gainstr, *losestr;
 } arc_abil[] = { { 1, &(HStealth), "", "" },
                  { 1, &(HFast), "", "" },
-                 { 10, &(HSearching), "感知", "" },//
+                 { 10, &(HSearching), "感知", "" },//perceptive
                  { 0, 0, 0, 0 } },
 
   bar_abil[] = { { 1, &(HPoison_resistance), "", "" },
@@ -115,7 +115,7 @@ adjattrib(ndx, incr, msgflg)
 int ndx, incr;
 int msgflg; /* positive => no message, zero => message, and */
 {           /* negative => conditional (msg if change made) */
-    int old_acurr, old_abase;
+    int old_acurr, old_abase, old_amax, decr;
     boolean abonflg;
     const char *attrstr;
 
@@ -131,22 +131,35 @@ int msgflg; /* positive => no message, zero => message, and */
     old_acurr = ACURR(ndx);
     old_abase = ABASE(ndx);
     if (incr > 0) {
-        ABASE(ndx) += incr;
         if (ABASE(ndx) > AMAX(ndx)) {
-            incr = ABASE(ndx) - AMAX(ndx);
-            AMAX(ndx) += incr;
+            AMAX(ndx) = ABASE(ndx);
             if (AMAX(ndx) > ATTRMAX(ndx))
-                AMAX(ndx) = ATTRMAX(ndx);
-            ABASE(ndx) = AMAX(ndx);
+                ABASE(ndx) = AMAX(ndx) = ATTRMAX(ndx);
         }
         attrstr = plusattr[ndx];
         abonflg = (ABON(ndx) < 0);
-    } else {
-        ABASE(ndx) += incr;
+    } else { /* incr is negative */
         if (ABASE(ndx) < ATTRMIN(ndx)) {
-            incr = ABASE(ndx) - ATTRMIN(ndx);
+            /*
+             * If base value has dropped so low that it is trying to be
+             * taken below the minimum, reduce max value (peak reached)
+             * instead.  That means that restore ability and repeated
+             * applications of unicorn horn will not be able to recover
+             * all the lost value.  Starting will 3.6.2, we only take away
+             * some (average half, possibly zero) of the excess from max
+             * instead of all of it, but without intervening recovery, it
+             * can still eventually drop to the minimum allowed.  After
+             * that, it can't be recovered, only improved with new gains.
+             *
+             * This used to assign a new negative value to incr and then
+             * add it, but that could affect messages below, possibly
+             * making a large decrease be described as a small one.
+             *
+             * decr = rn2(-(ABASE - ATTRMIN) + 1);
+             */
+            decr = rn2(ATTRMIN(ndx) - ABASE(ndx) + 1);
             ABASE(ndx) = ATTRMIN(ndx);
-            AMAX(ndx) += incr;
+            AMAX(ndx) -= decr;
             if (AMAX(ndx) < ATTRMIN(ndx))
                 AMAX(ndx) = ATTRMIN(ndx);
         }
@@ -155,10 +168,12 @@ int msgflg; /* positive => no message, zero => message, and */
     }
     if (ACURR(ndx) == old_acurr) {
         if (msgflg == 0 && flags.verbose) {
-            if (ABASE(ndx) == old_abase)
-                pline("你%s不能再%s.",
+            if (ABASE(ndx) == old_abase && AMAX(ndx) == old_amax) {
+                pline("你%s不能再%s了.",
                       abonflg ? "现在" : "已经", attrstr);
-            else /* current stayed the same but base value changed */
+            } else {
+                /* current stayed the same but base value changed, or
+                   base is at minimum and reduction caused max to drop */
                 Your("先天的%s%s了.", attrname[ndx],
                      (incr > 0) ? "提高" : "下降");
         }
@@ -167,8 +182,8 @@ int msgflg; /* positive => no message, zero => message, and */
 
     if (msgflg <= 0)
         You_feel("变得%s%s了!", (incr > 1 || incr < -1) ? "非常 " : "", attrstr);
-    context.botl = 1;
-    if (moves > 1 && (ndx == A_STR || ndx == A_CON))
+    context.botl = TRUE;
+    if (program_state.in_moveloop && (ndx == A_STR || ndx == A_CON))
         (void) encumber_msg();
     return TRUE;
 }
@@ -380,7 +395,7 @@ restore_attrib()
         if (ATEMP(i) != equilibrium && ATIME(i) != 0) {
             if (!(--(ATIME(i)))) { /* countdown for change */
                 ATEMP(i) += (ATEMP(i) > 0) ? -1 : 1;
-                context.botl = 1;
+                context.botl = TRUE;
                 if (ATEMP(i)) /* reset timer */
                     ATIME(i) = 100 / ACURR(A_CON);
             }
@@ -1124,8 +1139,10 @@ int reason; /* 0==conversion, 1==helm-of-OA on, 2==helm-of-OA off */
 {
     aligntyp oldalign = u.ualign.type;
 
-    u.ublessed = 0;   /* lose divine protection */
-    context.botl = 1; /* status line needs updating */
+    u.ublessed = 0; /* lose divine protection */
+    /* You/Your/pline message with call flush_screen(), triggering bot(),
+       so the actual data change needs to come before the message */
+    context.botl = TRUE; /* status line needs updating */
     if (reason == 0) {
         /* conversion via altar */
         u.ualignbase[A_CURRENT] = (aligntyp) newalign;

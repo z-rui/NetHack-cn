@@ -1,4 +1,4 @@
-/* NetHack 3.6	priest.c	$NHDT-Date: 1501725407 2017/08/03 01:56:47 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.44 $ */
+/* NetHack 3.6	priest.c	$NHDT-Date: 1545131519 2018/12/18 11:11:59 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.45 $ */
 /* Copyright (c) Izchak Miller, Steve Linhart, 1989.              */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -53,7 +53,9 @@ register xchar omx, omy, gx, gy;
     coord poss[9];
     long info[9];
     long allowflags;
+#if 0 /* dead code; see below */
     struct obj *ib = (struct obj *) 0;
+#endif
 
     if (omx == gx && omy == gy)
         return 0;
@@ -121,6 +123,7 @@ pick_move:
         newsym(nix, niy);
         if (mtmp->isshk && !in_his_shop && inhishop(mtmp))
             check_special_room(FALSE);
+#if 0 /* dead code; maybe someday someone will track down why... */
         if (ib) {
             if (cansee(mtmp->mx, mtmp->my))
                 pline("%s 捡起了%s.", Monnam(mtmp),
@@ -128,6 +131,7 @@ pick_move:
             obj_extract_self(ib);
             (void) mpickobj(mtmp, ib);
         }
+#endif
         return 1;
     }
     return 0;
@@ -309,7 +313,7 @@ char *pname; /* caller-supplied output buffer */
         Strcat(pname, "隐形的");
     if (mon->isminion && EMIN(mon)->renegade)
         Strcat(pname, "背叛的 ");
-    
+
     /* same as distant_monnam(), more or less... */
     if (do_hallu || !high_priest || !Is_astralevel(&u.uz)
         || distu(mon->mx, mon->my) <= 2 || program_state.gameover) {
@@ -336,7 +340,6 @@ char *pname; /* caller-supplied output buffer */
     }
 
     Strcat(pname, what);
-    
     return pname;
 }
 
@@ -483,7 +486,7 @@ int roomno;
             You_feel("你像是被监视着.");
             break;
         case 2:
-            pline("战栗向下串到你的%s.", body_part(SPINE));
+            pline("一阵战栗在你的%s下窜动.", body_part(SPINE));
             break;
         default:
             break; /* no message; unfortunately there's no
@@ -505,7 +508,7 @@ int roomno;
             if (flags.verbose)
                 You("吓得要死, 不能移动.");
             nomul(-3);
-            multi_reason = "被一个恶魔吓坏了";
+            multi_reason = "被一个鬼魂吓坏了";
             nomovemsg = "你重获了你的镇静.";
         }
     }
@@ -567,7 +570,7 @@ register struct monst *priest;
     if (priest->mpeaceful && *in_rooms(priest->mx, priest->my, TEMPLE)
         && !has_shrine(priest)) {
         verbalize(
-              "走开!  你玷污了这个神圣的地方.");
+              "走开!  汝玷污了这个神圣之地.");
         priest->mpeaceful = 0;
         return;
     }
@@ -577,10 +580,10 @@ register struct monst *priest;
             if (pmoney > 0L) {
                 /* Note: two bits is actually 25 cents.  Hmm. */
                 pline("%s 给你%s 要一瓶麦芽酒.", Monnam(priest),
-                      (pmoney == 1L) ? "1 bit" : "2 bits");
+                      (pmoney == 1L) ? "1 块钱" : "2 块钱");
                 money2u(priest, pmoney > 1L ? 2 : 1);
             } else
-                pline("%s 宣扬扶贫的美德.", Monnam(priest));
+                pline("%s 宣扬贫穷的美德.", Monnam(priest));
             exercise(A_WIS, TRUE);
         } else
             pline("%s 不感兴趣.", Monnam(priest));
@@ -591,23 +594,23 @@ register struct monst *priest;
         pline("%s 请你为教堂捐献.",
               Monnam(priest));
         if ((offer = bribe(priest)) == 0) {
-            verbalize("你将为你的行为后悔!");
+            verbalize("汝必将为汝之行为后悔!");
             if (coaligned)
                 adjalign(-1);
         } else if (offer < (u.ulevel * 200)) {
             if (money_cnt(invent) > (offer * 2L)) {
                 verbalize("小气鬼.");
             } else {
-                verbalize("感谢你所作的贡献.");
+                verbalize("吾感谢汝之贡献.");
                 /* give player some token */
                 exercise(A_WIS, TRUE);
             }
         } else if (offer < (u.ulevel * 400)) {
-            verbalize("你的确是一个虔诚的人.");
+            verbalize("汝果为虔诚之人.");
             if (money_cnt(invent) < (offer * 2L)) {
                 if (coaligned && u.ualign.record <= ALGN_SINNED)
                     adjalign(1);
-                verbalize("我赠与你一个祝福.");
+                verbalize("吾赠与汝祝福.");
                 incr_itimeout(&HClairvoyant, rn1(500, 500));
             }
         } else if (offer < (u.ulevel * 600)
@@ -618,7 +621,7 @@ register struct monst *priest;
                    && (!(HProtection & INTRINSIC)
                        || (u.ublessed < 20
                            && (u.ublessed < 9 || !rn2(u.ublessed))))) {
-            verbalize("你的奉献得到了回报.");
+            verbalize("汝之奉献得到回报.");
             if (!(HProtection & INTRINSIC)) {
                 HProtection |= FROMOUTSIDE;
                 if (!u.ublessed)
@@ -626,7 +629,7 @@ register struct monst *priest;
             } else
                 u.ublessed++;
         } else {
-            verbalize("你的慷慨无私深深地令人欣赏.");
+            verbalize("汝之慷慨无私感人至甚.");
             if (money_cnt(invent) < (offer * 2L) && coaligned) {
                 if (strayed && (moves - u.ucleansed) > 5000L) {
                     u.ualign.record = 0; /* cleanse thee */
@@ -770,15 +773,15 @@ struct monst *priest;
 
     switch (rn2(3)) {
     case 0:
-        pline("%s 愤怒的咆哮:  \" 你将遭受苦难!\"",
+        pline("%s 愤怒的咆哮:  \"汝将遭受苦难!\"",
               a_gname_at(ax, ay));
         break;
     case 1:
-        pline("%s 声音洪亮:  \" 你竟敢伤害我的仆人!\"",
+        pline("%s 声音洪亮:  \"汝胆敢伤害吾之仆人!\"",
               s_suffix(a_gname_at(ax, ay)));
         break;
     default:
-        pline("%s 怒吼:  \" 你在亵渎我的圣地!\"",
+        pline("%s 怒吼:  \"汝在亵渎吾之圣地!\"",
               a_gname_at(ax, ay));
         break;
     }
@@ -873,11 +876,11 @@ aligntyp alignment;
 {
     switch ((int) alignment) {
     case A_CHAOTIC:
-        return "混沌";
+        return "混乱";
     case A_NEUTRAL:
         return "中立";
     case A_LAWFUL:
-        return "秩序";
+        return "守序";
     case A_NONE:
         return "无阵营";
     }
@@ -915,7 +918,7 @@ const char *suffix;
     else if (u.ualign.record >= -8)
         pio = "有罪的";
     else
-        pio = "违法的";
+        pio = "违背的";
 
     Sprintf(buf, "%s", pio);
     if (suffix && (!showneg || u.ualign.record >= 0)) {
@@ -1019,7 +1022,7 @@ struct monst *mtmp;
     Strcpy(monnambuf, x_monnam(mtmp, ARTICLE_THE, (char *) 0,
                                (SUPPRESS_IT | SUPPRESS_INVISIBLE), FALSE));
 
-    pline("%s ( %s) 状态:  等级 %d  HP %d(%d)  AC %d%s.", monnambuf,
+    pline("%s (%s) 的状态:  等级 %d  生命 %d(%d)  AC %d%s.", monnambuf,
           align_str(alignment), mtmp->m_lev, mtmp->mhp, mtmp->mhpmax,
           find_mac(mtmp), info);
 }
@@ -1086,7 +1089,7 @@ ustatusline()
         Strcat(info, mon_nam(u.ustuck));
     }
 
-    pline("%s ( %s) 状态:  等级 %d  HP %d(%d)  AC %d%s.", plname,
+    pline("%s (%s) 的状态:  等级 %d  生命 %d(%d)  AC %d%s.", plname,
           piousness(FALSE, align_str(u.ualign.type)),
           Upolyd ? mons[u.umonnum].mlevel : u.ulevel, Upolyd ? u.mh : u.uhp,
           Upolyd ? u.mhmax : u.uhpmax, u.uac, info);

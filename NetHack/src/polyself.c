@@ -1,4 +1,4 @@
-/* NetHack 3.6	polyself.c	$NHDT-Date: 1520797126 2018/03/11 19:38:46 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.117 $ */
+/* NetHack 3.6	polyself.c	$NHDT-Date: 1556497911 2019/04/29 00:31:51 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.132 $ */
 /*      Copyright (C) 1987, 1988, 1989 by Ken Arromdee */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -25,7 +25,6 @@ STATIC_DCL void FDECL(check_strangling, (BOOLEAN_P));
 STATIC_DCL void FDECL(polyman, (const char *, const char *));
 STATIC_DCL void NDECL(break_armor);
 STATIC_DCL void FDECL(drop_weapon, (int));
-STATIC_DCL void NDECL(uunstick);
 STATIC_DCL int FDECL(armor_to_dragon, (int));
 STATIC_DCL void NDECL(newman);
 STATIC_DCL void NDECL(polysense);
@@ -42,9 +41,8 @@ void
 set_uasmon()
 {
     struct permonst *mdat = &mons[u.umonnum];
-    int new_speed, old_speed = youmonst.data ? youmonst.data->mmove : 0;
 
-    set_mon_data(&youmonst, mdat, 0);
+    set_mon_data(&youmonst, mdat);
 
 #define PROPSET(PropIndx, ON)                          \
     do {                                               \
@@ -81,12 +79,16 @@ set_uasmon()
     PROPSET(HALLUC_RES, dmgtype(mdat, AD_HALU));
     PROPSET(SEE_INVIS, perceives(mdat));
     PROPSET(TELEPAT, telepathic(mdat));
-    PROPSET(INFRAVISION, infravision(mdat));
+    /* note that Infravision uses mons[race] rather than usual mons[role] */
+    PROPSET(INFRAVISION, infravision(Upolyd ? mdat : &mons[urace.malenum]));
     PROPSET(INVIS, pm_invisible(mdat));
     PROPSET(TELEPORT, can_teleport(mdat));
     PROPSET(TELEPORT_CONTROL, control_teleport(mdat));
     PROPSET(LEVITATION, is_floater(mdat));
-    PROPSET(FLYING, is_flyer(mdat));
+    /* floating eye is the only 'floater'; it is also flagged as a 'flyer';
+       suppress flying for it so that enlightenment doesn't confusingly
+       show latent flight capability always blocked by levitation */
+    PROPSET(FLYING, (is_flyer(mdat) && !is_floater(mdat)));
     PROPSET(SWIMMING, is_swimmer(mdat));
     /* [don't touch MAGICAL_BREATHING here; both Amphibious and Breathless
        key off of it but include different monster forms...] */
@@ -98,17 +100,9 @@ set_uasmon()
     float_vs_flight(); /* maybe toggle (BFlying & I_SPECIAL) */
     polysense();
 
-    if (youmonst.movement) {
-        new_speed = mdat->mmove;
-        /* prorate unused movement if new form is slower so that
-           it doesn't get extra moves leftover from previous form;
-           if new form is faster, leave unused movement as is */
-        if (new_speed < old_speed)
-            youmonst.movement = new_speed * youmonst.movement / old_speed;
-    }
-
 #ifdef STATUS_HILITES
-    status_initialize(REASSESS_ONLY);
+    if (VIA_WINDOWPORT())
+        status_initialize(REASSESS_ONLY);
 #endif
 }
 
@@ -116,12 +110,21 @@ set_uasmon()
 void
 float_vs_flight()
 {
-    /* floating overrides flight; normally float_up() and float_down()
-       handle this, but sometimes they're skipped */
-    if (HLevitation || ELevitation)
+    boolean stuck_in_floor = (u.utrap && u.utraptype != TT_PIT);
+
+    /* floating overrides flight; so does being trapped in the floor */
+    if ((HLevitation || ELevitation)
+        || ((HFlying || EFlying) && stuck_in_floor))
         BFlying |= I_SPECIAL;
     else
         BFlying &= ~I_SPECIAL;
+    /* being trapped on the ground (bear trap, web, molten lava survived
+       with fire resistance, former lava solidified via cold, tethered
+       to a buried iron ball) overrides floating--the floor is reachable */
+    if ((HLevitation || ELevitation) && stuck_in_floor)
+        BLevitation |= I_SPECIAL;
+    else
+        BLevitation &= ~I_SPECIAL;
     context.botl = TRUE;
 }
 
@@ -160,7 +163,7 @@ polyman(fmt, arg)
 const char *fmt, *arg;
 {
     boolean sticky = (sticks(youmonst.data) && u.ustuck && !u.uswallow),
-            was_mimicking = (youmonst.m_ap_type == M_AP_OBJECT);
+            was_mimicking = (U_AP_TYPE == M_AP_OBJECT);
     boolean was_blind = !!Blind;
 
     if (Upolyd) {
@@ -207,8 +210,8 @@ const char *fmt, *arg;
     if (u.twoweap && !could_twoweap(youmonst.data))
         untwoweapon();
 
-    if (u.utraptype == TT_PIT && u.utrap) {
-        u.utrap = rn1(6, 2); /* time to escape resets */
+    if (u.utrap && u.utraptype == TT_PIT) {
+        set_utrap(rn1(6, 2), TT_PIT); /* time to escape resets */
     }
     if (was_blind && !Blind) { /* reverting from eyeless */
         Blinded = 1L;
@@ -350,7 +353,7 @@ newman()
         } else {
         dead: /* we come directly here if their experience level went to 0 or
                  less */
-            Your("新外貌似乎不够健康来生存.");
+            Your("新外貌似乎不够健康, 不足以生存.");
             killer.format = KILLED_BY_AN;
             Strcpy(killer.name, "不成功的变形");
             done(DIED);
@@ -415,7 +418,7 @@ int psflags;
         tryct = 5;
         do {
             mntmp = NON_PM;
-            getlin("变成哪种怪? [ 输入怪的名字]", buf);
+            getlin("变成哪种怪? [输入怪的名字]", buf);
             (void) mungspaces(buf);
             if (*buf == '\033') {
                 /* user is cancelling controlled poly */
@@ -501,11 +504,11 @@ int psflags;
                        shorten to "<color> scale mail" */
                     dsmail = strcpy(buf, simpleonames(uarm));
                     if ((p = strstri(dsmail, "龙")) != 0)
-                        while ((p[0] = p[3]) != '\0')
+                        while ((p[0] = p[strlen("龙")]) != '\0')
                             ++p;
                     /* tricky phrasing; dragon scale mail
                        is singular, dragon scales are plural */
-                    Your("%s 恢复为鳞在你和它们融合的时候.",
+                    Your("%s 恢复为鳞, 在你和它们融合的时候.",
                          dsmail);
                     /* uarm->spe enchantment remains unchanged;
                        re-converting scales to mail poses risk
@@ -623,7 +626,7 @@ int mntmp;
     }
 
     /* if stuck mimicking gold, stop immediately */
-    if (multi < 0 && youmonst.m_ap_type == M_AP_OBJECT
+    if (multi < 0 && U_AP_TYPE == M_AP_OBJECT
         && youmonst.data->mlet != S_MIMIC)
         unmul("");
     /* if becoming a non-mimic, stop mimicking anything */
@@ -649,7 +652,7 @@ int mntmp;
                        ? "" : flags.female ? "女性" : "男性");
     }
     Strcat(buf, mons[mntmp].mname);
-    You("%s%s!", (u.umonnum != mntmp) ? "变成了一个" : "感觉像一个", buf);
+    You("%s%s!", (u.umonnum != mntmp) ? "变成了" : "感觉像", an(buf));
 
     if (Stoned && poly_when_stoned(&mons[mntmp])) {
         /* poly_when_stoned already checked stone golem genocide */
@@ -725,8 +728,8 @@ int mntmp;
     drop_weapon(1);
     (void) hideunder(&youmonst);
 
-    if (u.utraptype == TT_PIT && u.utrap) {
-        u.utrap = rn1(6, 2); /* time to escape resets */
+    if (u.utrap && u.utraptype == TT_PIT) {
+        set_utrap(rn1(6, 2), TT_PIT); /* time to escape resets */
     }
     if (was_blind && !Blind) { /* previous form was eyeless */
         Blinded = 1L;
@@ -734,10 +737,14 @@ int mntmp;
     }
     newsym(u.ux, u.uy); /* Change symbol */
 
+    /* [note:  this 'sticky' handling is only sufficient for changing from
+       grabber to engulfer or vice versa because engulfing by poly'd hero
+       always ends immediately so won't be in effect during a polymorph] */
     if (!sticky && !u.uswallow && u.ustuck && sticks(youmonst.data))
         u.ustuck = 0;
     else if (sticky && !sticks(youmonst.data))
         uunstick();
+
     if (u.usteed) {
         if (touch_petrifies(u.usteed->data) && !Stone_resistance && rnl(3)) {
             pline("%s碰到%s.", no_longer_petrify_resistant,
@@ -750,8 +757,8 @@ int mntmp;
     }
 
     if (flags.verbose) {
-        static const char use_thec[] = "使用命令 # %s  来 %s.";
-        static const char monsterc[] = "怪物能力";
+        static const char use_thec[] = "使用命令 #%s 来 %s.";
+        static const char monsterc[] = "monster";
 
         if (can_breathe(youmonst.data))
             pline(use_thec, monsterc, "使用你的呼吸武器");
@@ -778,8 +785,12 @@ int mntmp;
         if (is_vampire(youmonst.data))
             pline(use_thec, monsterc, "改变形状");
 
-        if (lays_eggs(youmonst.data) && flags.female)
-            pline(use_thec, "坐", "下一个蛋");
+        if (lays_eggs(youmonst.data) && flags.female &&
+            !(youmonst.data == &mons[PM_GIANT_EEL]
+                || youmonst.data == &mons[PM_ELECTRIC_EEL]))
+            pline(use_thec, "sit",
+                  eggs_in_water(youmonst.data) ?
+                      "在水中产卵" : "下一个蛋");
     }
 
     /* you now know what an egg of your type looks like */
@@ -794,17 +805,17 @@ int mntmp;
         spoteffects(TRUE);
     if (Passes_walls && u.utrap
         && (u.utraptype == TT_INFLOOR || u.utraptype == TT_BURIEDBALL)) {
-        u.utrap = 0;
-        if (u.utraptype == TT_INFLOOR)
+        if (u.utraptype == TT_INFLOOR) {
             pline_The("岩石似乎不再困住你.");
-        else {
+        } else {
             pline_The("掩埋的球不再束缚你.");
             buried_ball_to_freedom();
         }
+        reset_utrap(TRUE);
     } else if (likes_lava(youmonst.data) && u.utrap
                && u.utraptype == TT_LAVA) {
-        u.utrap = 0;
         pline_The("现在感觉%s舒缓了.", hliquid("熔岩"));
+        reset_utrap(TRUE);
     }
     if (amorphous(youmonst.data) || is_whirly(youmonst.data)
         || unsolid(youmonst.data)) {
@@ -823,11 +834,11 @@ int mntmp;
         You("不再卡在 %s中.",
             u.utraptype == TT_WEB ? "网" : "捕兽夹");
         /* probably should burn webs too if PM_FIRE_ELEMENTAL */
-        u.utrap = 0;
+        reset_utrap(TRUE);
     }
     if (webmaker(youmonst.data) && u.utrap && u.utraptype == TT_WEB) {
         You("适应了在网中.");
-        u.utrap = 0;
+        reset_utrap(TRUE);
     }
     check_strangling(TRUE); /* maybe start strangling */
 
@@ -1018,6 +1029,8 @@ int alone;
 void
 rehumanize()
 {
+    boolean was_flying = (Flying != 0);
+
     /* You can't revert back while unchanging */
     if (Unchanging) {
         if (u.mh < 1) {
@@ -1038,7 +1051,7 @@ rehumanize()
     if (u.uhp < 1) {
         /* can only happen if some bit of code reduces u.uhp
            instead of u.mh while poly'd */
-        Your("旧外貌不够健康来生存.");
+        Your("旧外貌不够健康, 不足以生存.");
         Sprintf(killer.name, "恢复到不健康的%s外貌", urace.adj);
         killer.format = KILLED_BY;
         done(DIED);
@@ -1048,7 +1061,9 @@ rehumanize()
     context.botl = 1;
     vision_full_recalc = 1;
     (void) encumber_msg();
-
+    if (was_flying && !Flying && u.usteed)
+        You("和 %s 缓缓地回到 %s.",
+            mon_nam(u.usteed), surface(u.ux, u.uy));
     retouch_equipment(2);
     if (!uarmg)
         selftouch(no_longer_petrify_resistant);
@@ -1103,7 +1118,7 @@ dospit()
             break;
         default:
             impossible("bad attack type in dospit");
-        /* fall through */
+            /*FALLTHRU*/
         case AD_ACID:
             otmp = mksobj(ACID_VENOM, TRUE, FALSE);
             break;
@@ -1123,7 +1138,7 @@ doremove()
                       surface(u.ux, u.uy));
             return 0;
         }
-        You("没有被拴着任何东西!");
+        You("没有被任何东西拴着!");
         return 0;
     }
     unpunish();
@@ -1141,7 +1156,7 @@ dospinweb()
         return 0;
     }
     if (u.uswallow) {
-        You("释放出网液体在%s里面.", mon_nam(u.ustuck));
+        You("在%s里释放出网液体.", mon_nam(u.ustuck));
         if (is_animal(u.ustuck->data)) {
             expels(u.ustuck, u.ustuck->data, TRUE);
             return 0;
@@ -1287,7 +1302,7 @@ dogaze()
     }
 
     if (Blind) {
-        You_cant("看见任何东西来凝视.");
+        You_cant("看见任何可以凝视的东西.");
         return 0;
     } else if (Hallucination) {
         You_cant("凝视任何你能看到的东西.");
@@ -1308,9 +1323,9 @@ dogaze()
             if (Invis && !perceives(mtmp->data)) {
                 pline("%s 似乎没有注意到你的凝视.", Monnam(mtmp));
             } else if (mtmp->minvis && !See_invisible) {
-                You_cant("你看不到哪里去凝视 %s.", Monnam(mtmp));
-            } else if (mtmp->m_ap_type == M_AP_FURNITURE
-                       || mtmp->m_ap_type == M_AP_OBJECT) {
+                You("看不见去哪凝视 %s.", Monnam(mtmp));
+            } else if (M_AP_TYPE(mtmp) == M_AP_FURNITURE
+                       || M_AP_TYPE(mtmp) == M_AP_OBJECT) {
                 looked--;
                 continue;
             } else if (flags.safe_dog && mtmp->mtame && !Confusion) {
@@ -1355,7 +1370,7 @@ dogaze()
                         (void) destroy_mitem(mtmp, SPBOOK_CLASS, AD_FIRE);
                     if (dmg)
                         mtmp->mhp -= dmg;
-                    if (mtmp->mhp <= 0)
+                    if (DEADMONSTER(mtmp))
                         killed(mtmp);
                 }
                 /* For consistency with passive() in uhitm.c, this only
@@ -1397,7 +1412,7 @@ dogaze()
         }
     }
     if (!looked)
-        You("尤其凝视不到任何地方.");
+        You("凝视不到任何特别的地方.");
     return 1;
 }
 
@@ -1418,7 +1433,7 @@ dohide()
                        : (humanoid(u.ustuck->data) ? "牵制某人"
                                                    : "牵制那个生物"));
         if (u.uundetected
-            || (ismimic && youmonst.m_ap_type != M_AP_NOTHING)) {
+            || (ismimic && U_AP_TYPE != M_AP_NOTHING)) {
             u.uundetected = 0;
             youmonst.m_ap_type = M_AP_NOTHING;
             newsym(u.ux, u.uy);
@@ -1456,7 +1471,7 @@ dohide()
      * else make youhiding() give smarter messages at such spots.
      */
 
-    if (u.uundetected || (ismimic && youmonst.m_ap_type != M_AP_NOTHING)) {
+    if (u.uundetected || (ismimic && U_AP_TYPE != M_AP_NOTHING)) {
         youhiding(FALSE, 1); /* "you are already hiding" */
         return 0;
     }
@@ -1480,7 +1495,7 @@ dopoly()
     if (is_vampire(youmonst.data)) {
         polyself(2);
         if (savedat != youmonst.data) {
-            You("转变成 %s.", youmonst.data->mname);
+            You("transform into %s.", an(youmonst.data->mname));
             newsym(u.ux, u.uy);
         }
     }
@@ -1517,16 +1532,20 @@ domindblast()
                 u_sen ? "感知力"
                       : telepathic(mtmp->data) ? "潜在的感知力" : "精神");
             mtmp->mhp -= rnd(15);
-            if (mtmp->mhp <= 0)
+            if (DEADMONSTER(mtmp))
                 killed(mtmp);
         }
     }
     return 1;
 }
 
-STATIC_OVL void
+void
 uunstick()
 {
+    if (!u.ustuck) {
+        impossible("uunstick: no ustuck?");
+        return;
+    }
     pline("%s不再被你抓住.", Monnam(u.ustuck));
     u.ustuck = 0;
 }

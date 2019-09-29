@@ -1,4 +1,4 @@
-/* NetHack 3.6	sounds.c	$NHDT-Date: 1452992329 2016/01/17 00:58:49 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.78 $ */
+/* NetHack 3.6	sounds.c	$NHDT-Date: 1542765362 2018/11/21 01:56:02 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.81 $ */
 /*      Copyright (c) 1989 Janet Walz, Mike Threepoint */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -53,7 +53,7 @@ dosounds()
         static const char *const throne_msg[4] = {
             "宫廷腔调的谈话声.",
             "在审判中权杖的重击声.",
-            "有人叫道 \" 砍掉%s头!\"", "贝露庭尔王后的猫!",
+            "有人叫道 \"砍掉%s头!\"", "贝露庭尔王后的猫!",
         };
         for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
             if (DEADMONSTER(mtmp))
@@ -139,7 +139,7 @@ dosounds()
                     break;
                 case 2:
                     You_hear("蜜蜂在你的%s软帽里!",
-                             uarmh ? "" : "( 不存在的) ");
+                             uarmh ? "" : "(不存在的) ");
                     break;
                 }
                 return;
@@ -1007,7 +1007,7 @@ dochat()
         return 1;
     }
 
-    if (!getdir("和谁交谈? ( 哪个方向)")) {
+    if (!getdir("和谁交谈? (哪个方向)")) {
         /* decided not to chat */
         return 0;
     }
@@ -1059,8 +1059,8 @@ dochat()
         return 0;
     }
 
-    if (!mtmp || mtmp->mundetected || mtmp->m_ap_type == M_AP_FURNITURE
-        || mtmp->m_ap_type == M_AP_OBJECT)
+    if (!mtmp || mtmp->mundetected || M_AP_TYPE(mtmp) == M_AP_FURNITURE
+        || M_AP_TYPE(mtmp) == M_AP_OBJECT)
         return 0;
 
     /* sleeping monsters won't talk, except priests (who wake up) */

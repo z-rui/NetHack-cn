@@ -1,4 +1,4 @@
-/* NetHack 3.6	artifact.c	$NHDT-Date: 1509836679 2017/11/04 23:04:39 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.106 $ */
+/* NetHack 3.6	artifact.c	$NHDT-Date: 1553363416 2019/03/23 17:50:16 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.129 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -1038,20 +1038,20 @@ char *hittee;              /* target's name: "you" or mon_nam(mdef) */
                 if (youmonst.data != old_uasmon)
                     *dmgptr = 0; /* rehumanized, so no more damage */
                 if (u.uenmax > 0) {
-                    You("失去了魔法能量!");
                     u.uenmax--;
                     if (u.uen > 0)
                         u.uen--;
-                    context.botl = 1;
+                    context.botl = TRUE;
+                    You("失去了魔法能量!");
                 }
             } else {
                 if (mdef->data == &mons[PM_CLAY_GOLEM])
                     mdef->mhp = 1; /* cancelled clay golems will die */
                 if (youattack && attacktype(mdef->data, AT_MAGC)) {
-                    You("吸收魔法能量!");
                     u.uenmax++;
                     u.uen++;
-                    context.botl = 1;
+                    context.botl = TRUE;
+                    You("吸收魔法能量!");
                 }
             }
         }
@@ -1213,8 +1213,10 @@ int dieroll; /* needed for Magicbane and vorpal blades */
     if (attacks(AD_ELEC, otmp)) {
         if (realizes_damage)
             pline_The("厚重的铁锤打了一下%s %s%c",
-                      !spec_dbon_applies ? "" : "!  雷击了一下",
+                      !spec_dbon_applies ? "" : "!  闪电击中了",
                       hittee, !spec_dbon_applies ? '.' : '!');
+        if (spec_dbon_applies)
+            wake_nearto(mdef->mx, mdef->my, 4 * 4);
         if (!rn2(5))
             (void) destroy_mitem(mdef, RING_CLASS, AD_ELEC);
         if (!rn2(5))
@@ -1471,7 +1473,7 @@ struct obj *obj;
                 make_slimed(0L, (char *) 0);
             if (Blinded > creamed)
                 make_blinded(creamed, FALSE);
-            context.botl = 1;
+            context.botl = TRUE;
             break;
         }
         case ENERGY_BOOST: {
@@ -1481,9 +1483,9 @@ struct obj *obj;
             else if (epboost < 12)
                 epboost = u.uenmax - u.uen;
             if (epboost) {
-                You_feel("到新的活力.");
                 u.uen += epboost;
-                context.botl = 1;
+                context.botl = TRUE;
+                You_feel("到新的活力.");
             } else
                 goto nothing_special;
             break;
@@ -1618,7 +1620,7 @@ struct obj *obj;
         }
 
         if ((eprop & ~W_ARTI) || iprop) {
-        nothing_special:
+ nothing_special:
             /* you had the property from some other source too */
             if (carried(obj))
                 You_feel("到一股力量, 但似乎无事发生.");
@@ -1853,6 +1855,37 @@ int arti_indx;
     return hcolor(colorstr);
 }
 
+/* glow verb; [0] holds the value used when blind */
+static const char *glow_verbs[] = {
+    "quiver", "flicker", "glimmer", "gleam"
+};
+
+/* relative strength that Sting is glowing (0..3), to select verb */
+STATIC_OVL int
+glow_strength(count)
+int count;
+{
+    /* glow strength should also be proportional to proximity and
+       probably difficulty, but we don't have that information and
+       gathering it is more trouble than this would be worth */
+    return (count > 12) ? 3 : (count > 4) ? 2 : (count > 0);
+}
+
+const char *
+glow_verb(count, ingsfx)
+int count; /* 0 means blind rather than no applicable creatures */
+boolean ingsfx;
+{
+    static char resbuf[20];
+
+    Strcpy(resbuf, glow_verbs[glow_strength(count)]);
+    /* ing_suffix() will double the last consonant for all the words
+       we're using and none of them should have that, so bypass it */
+    if (ingsfx)
+        Strcat(resbuf, "ing");
+    return resbuf;
+}
+
 /* use for warning "glow" for Sting, Orcrist, and Grimtooth */
 void
 Sting_effects(orc_count)
@@ -1862,22 +1895,28 @@ int orc_count; /* new count (warn_obj_cnt is old count); -1 is a flag value */
         && (uwep->oartifact == ART_STING
             || uwep->oartifact == ART_ORCRIST
             || uwep->oartifact == ART_GRIMTOOTH)) {
+        int oldstr = glow_strength(warn_obj_cnt),
+            newstr = glow_strength(orc_count);
+
         if (orc_count == -1 && warn_obj_cnt > 0) {
             /* -1 means that blindness has just been toggled; give a
                'continue' message that eventual 'stop' message will match */
-            pline("%s 在%s.", bare_artifactname(uwep),
-                  !Blind ? "发光" : "抖动");
-        } else if (orc_count > 0 && warn_obj_cnt == 0) {
+            pline("%s is %s.", bare_artifactname(uwep),
+                  glow_verb(Blind ? 0 : warn_obj_cnt, TRUE));
+        } else if (newstr > 0 && newstr != oldstr) {
             /* 'start' message */
             if (!Blind)
-                pline("%s %s %s光芒!", bare_artifactname(uwep),
-                      otense(uwep, "发出"), glow_color(uwep->oartifact));
+                pline("%s %s %s%c", bare_artifactname(uwep),
+                      otense(uwep, glow_verb(orc_count, FALSE)),
+                      glow_color(uwep->oartifact),
+                      (newstr > oldstr) ? '!' : '.');
             else
-                pline("%s 轻微地抖动.", bare_artifactname(uwep));
+                pline("%s %s slightly.", bare_artifactname(uwep),
+                      otense(uwep, glow_verb(0, FALSE)));
         } else if (orc_count == 0 && warn_obj_cnt > 0) {
             /* 'stop' message */
-            pline("%s 停止了%s.", bare_artifactname(uwep),
-                  !Blind ? "发光" : "抖动");
+            pline("%s stops %s.", bare_artifactname(uwep),
+                  glow_verb(Blind ? 0 : warn_obj_cnt, TRUE));
         }
     }
 }
@@ -1939,7 +1978,7 @@ boolean loseit;    /* whether to drop it if hero can longer touch it */
     if (loseit && obj) {
         if (Levitation) {
             freeinv(obj);
-            hitfloor(obj);
+            hitfloor(obj, TRUE);
         } else {
             /* dropx gives a message iff item lands on an altar */
             if (!IS_ALTAR(levl[u.ux][u.uy].typ))

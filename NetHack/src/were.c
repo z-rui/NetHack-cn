@@ -1,4 +1,4 @@
-/* NetHack 3.6	were.c	$NHDT-Date: 1505214877 2017/09/12 11:14:37 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.21 $ */
+/* NetHack 3.6	were.c	$NHDT-Date: 1550524568 2019/02/18 21:16:08 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.23 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -96,7 +96,7 @@ new_were(mon)
 register struct monst *mon;
 {
     register int pm;
-    char mchname[30];
+    int len;
 
     pm = counter_were(monsndx(mon->data));
     if (pm < LOW_PM) {
@@ -104,14 +104,12 @@ register struct monst *mon;
         return;
     }
 
-    strcpy(mchname,mons[pm].mname);
-    mchname[strlen(mons[pm].mname)-strlen("人")] = '\0';
-
+    len = strlen(mons[pm].mname)-strlen("人");
     if (canseemon(mon) && !Hallucination)
-        pline("%s 变成了%s.", Monnam(mon),
-              is_human(&mons[pm]) ? "人" : mchname);
+        pline("%s 变成了%.*s.", Monnam(mon),
+              len, is_human(&mons[pm]) ? "人" : mons[pm].mname);
 
-    set_mon_data(mon, &mons[pm], 0);
+    set_mon_data(mon, &mons[pm]);
     if (mon->msleeping || !mon->mcanmove) {
         /* transformation wakens and/or revitalizes */
         mon->msleeping = 0;
@@ -185,13 +183,11 @@ you_were()
     if (Unchanging || u.umonnum == u.ulycn)
         return;
     if (controllable_poly) {
-        char mchname[30];
-        strcpy(mchname,mons[u.ulycn].mname);
-        mchname[strlen(mons[u.ulycn].mname)-strlen("人")] = '\0';
+        int len;
 
-        /* `+4' => skip "were" prefix to get name of beast */
-        Sprintf(qbuf, "你想变成%s吗?",
-                mchname);
+        len = strlen(mons[pm].mname)-strlen("人");
+        Sprintf(qbuf, "你想变成%.*s吗?",
+	        len, mons[u.ulycn].mname);
         if (!paranoid_query(ParanoidWerechange, qbuf))
             return;
     }

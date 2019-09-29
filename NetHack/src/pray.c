@@ -1,4 +1,4 @@
-/* NetHack 3.6	pray.c	$NHDT-Date: 1519662898 2018/02/26 16:34:58 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.96 $ */
+/* NetHack 3.6	pray.c	$NHDT-Date: 1549074257 2019/02/02 02:24:17 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.110 $ */
 /* Copyright (c) Benson I. Margulies, Mike Stephenson, Steve Linhart, 1989. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -157,7 +157,7 @@ stuck_in_wall()
             y = u.uy + j;
             if (!isok(x, y)
                 || (IS_ROCK(levl[x][y].typ)
-                    && (levl[x][y].typ != SDOOR || levl[x][y].typ != SCORR))
+                    && (levl[x][y].typ != SDOOR && levl[x][y].typ != SCORR))
                 || (blocked_boulder(i, j) && !throws_rocks(youmonst.data)))
                 ++count;
         }
@@ -247,6 +247,11 @@ in_trouble()
         && (!u.uswallow
             || !attacktype_fordmg(u.ustuck->data, AT_ENGL, AD_BLND)))
         return TROUBLE_BLIND;
+    /* deafness isn't it's own trouble; healing magic cures deafness
+       when it cures blindness, so do the same with trouble repair */
+    if ((HDeaf & TIMEOUT) > 1L)
+        return TROUBLE_BLIND;
+
     for (i = 0; i < A_MAX; i++)
         if (ABASE(i) < AMAX(i))
             return TROUBLE_POISONED;
@@ -355,7 +360,7 @@ int trouble;
         You("回到了结实的地上.");
         /* teleport should always succeed, but if not, just untrap them */
         if (!safe_teleds(FALSE))
-            u.utrap = 0;
+            reset_utrap(TRUE);
         break;
     case TROUBLE_STARVING:
         /* temporarily lost strength recovery now handled by init_uhunger() */
@@ -513,14 +518,27 @@ int trouble;
         }
         (void) encumber_msg();
         break;
-    case TROUBLE_BLIND: {
+    case TROUBLE_BLIND: { /* handles deafness as well as blindness */
+        char msgbuf[BUFSZ];
         const char *eyes = body_part(EYE);
+        boolean cure_deaf = (HDeaf & TIMEOUT) ? TRUE : FALSE;
 
-        if (eyecount(youmonst.data) != 1)
-            eyes = makeplural(eyes);
-        Your("%s %s 好些了.", eyes, vtense(eyes, "感觉"));
-        u.ucreamed = 0;
-        make_blinded(0L, FALSE);
+        msgbuf[0] = '\0';
+        if (Blinded) {
+            if (eyecount(youmonst.data) != 1)
+                eyes = makeplural(eyes);
+            Sprintf(msgbuf, "你的%s%s好些了", eyes, vtense(eyes, "感觉"));
+            u.ucreamed = 0;
+            make_blinded(0L, FALSE);
+        }
+        if (cure_deaf) {
+            make_deaf(0L, FALSE);
+            if (!Deaf)
+                Sprintf(eos(msgbuf), "%s能再次听见了",
+                        !*msgbuf ? "你" : "和你");
+        }
+        if (*msgbuf)
+            pline("%s.", msgbuf);
         break;
     }
     case TROUBLE_WOUNDED_LEGS:
@@ -533,7 +551,7 @@ int trouble;
         make_confused(0L, TRUE);
         break;
     case TROUBLE_HALLUCINATION:
-        pline("看起来你又回到了堪萨斯州.");
+        pline("看起来你又回到了堪萨斯.");
         (void) make_hallucinated(0L, FALSE, 0L);
         break;
     case TROUBLE_SADDLE:
@@ -674,7 +692,7 @@ aligntyp resp_god;
     case 2:
     case 3:
         godvoice(resp_god, (char *) 0);
-        pline("\" 汝 %s, %s.\"",
+        pline("\"汝%s, %s.\"",
               (ugod_is_angry() && resp_god == u.ualign.type)
                   ? "迷失了道路"
                   : "甚傲慢",
@@ -693,17 +711,17 @@ aligntyp resp_god;
     case 5:
         gods_angry(resp_god);
         if (!Blind && !Antimagic)
-            pline("%s 光芒围绕着你.", hcolor(NH_BLACK));
+            pline("%s光芒围绕着你.", hcolor(NH_BLACK));
         rndcurse();
         break;
     case 7:
     case 8:
         godvoice(resp_god, (char *) 0);
-        verbalize("汝敢%s 吾?",
+        verbalize("汝敢%s吾?",
                   (on_altar() && (a_align(u.ux, u.uy) != resp_god))
                       ? "轻蔑"
                       : "号令");
-        pline("\" 那么死吧, %s!\"",
+        pline("\"那么死吧, %s!\"",
               youmonst.data->mlet == S_HUMAN ? "凡人" : "畜生");
         summon_minion(resp_god, FALSE);
         break;
@@ -757,22 +775,22 @@ gcrownu()
     switch (u.ualign.type) {
     case A_LAWFUL:
         u.uevent.uhand_of_elbereth = 1;
-        verbalize("我赐予你荣誉...  伊尔碧绿丝之手!");
+        verbalize("吾赐予汝荣誉...  伊尔碧绿丝之手!");
         break;
     case A_NEUTRAL:
         u.uevent.uhand_of_elbereth = 2;
         in_hand = (uwep && uwep->oartifact == ART_VORPAL_BLADE);
         already_exists =
             exist_artifact(LONG_SWORD, artiname(ART_VORPAL_BLADE));
-        verbalize("你将成为我的平衡使者!");
+        verbalize("汝将成为吾之 平衡使者!");
         break;
     case A_CHAOTIC:
         u.uevent.uhand_of_elbereth = 3;
         in_hand = (uwep && uwep->oartifact == ART_STORMBRINGER);
         already_exists =
             exist_artifact(RUNESWORD, artiname(ART_STORMBRINGER));
-        verbalize("你被选中来要为我的荣耀而%s!",
-                  already_exists && !in_hand ? "杀生" : "偷取灵魂");
+        verbalize("汝乃被选中之人, 为吾之荣耀而%s!",
+                  already_exists && !in_hand ? "杀生" : "窃魂");
         break;
     }
 
@@ -921,7 +939,7 @@ aligntyp g_align;
      *  - fix all of your problems;
      *  - do you a gratuitous favor.
      *
-     * If you make it to the the last category, you roll randomly again
+     * If you make it to the last category, you roll randomly again
      * to see what they do for you.
      *
      * If your luck is at least 0, then you are guaranteed rescued from
@@ -1074,7 +1092,11 @@ aligntyp g_align;
             u.uhp = u.uhpmax;
             if (Upolyd)
                 u.mh = u.mhmax;
-            ABASE(A_STR) = AMAX(A_STR);
+            if (ABASE(A_STR) < AMAX(A_STR)) {
+                ABASE(A_STR) = AMAX(A_STR);
+                context.botl = 1; /* before potential message */
+                (void) encumber_msg();
+            }
             if (u.uhunger < 900)
                 init_uhunger();
             /* luck couldn't have been negative at start of prayer because
@@ -1117,10 +1139,10 @@ aligntyp g_align;
         }
         case 5: {
             static NEARDATA const char msg[] =
-                "\"因此我赐予你%s的礼物!\"";
+                "\"故吾赐予汝%s之礼!\"";
 
             godvoice(u.ualign.type,
-                     "你的进步让我很欣慰,");
+                     "汝之进步令吾甚欣慰,");
             if (!(HTelepat & INTRINSIC)) {
                 HTelepat |= FROMOUTSIDE;
                 pline(msg, "感知能力");
@@ -1139,9 +1161,9 @@ aligntyp g_align;
                         u.ublessed = rn1(3, 2);
                 } else
                     u.ublessed++;
-                pline(msg, "我的保护");
+                pline(msg, "吾之保护");
             }
-            verbalize("以我的名义明智地使用它!");
+            verbalize("以吾之名义, 明智地使用它!");
             break;
         }
         case 7:
@@ -1218,10 +1240,9 @@ boolean bless_water;
             other = TRUE;
     }
     if (!Blind && changed) {
-        pline("%s 药水%s 在祭坛上发出%s %s光芒了片刻.",
+        pline("%s 药水在祭坛上发出一阵%s光芒.",
               ((other && changed > 1L) ? "一些"
                                        : (other ? "一瓶" : "")),
-              ((other || changed > 1L) ? "" : ""), (changed > 1L ? "" : ""),
               (bless_water ? hcolor(NH_LIGHT_BLUE) : hcolor(NH_BLACK)));
     }
     return (boolean) (changed > 0L);
@@ -1325,7 +1346,6 @@ dosacrifice()
     if (otmp->otyp == CORPSE) {
         register struct permonst *ptr = &mons[otmp->corpsenm];
         struct monst *mtmp;
-        extern const int monstr[];
 
         /* KMH, conduct */
         u.uconduct.gnostic++;
@@ -1338,7 +1358,7 @@ dosacrifice()
 
         if (otmp->corpsenm == PM_ACID_BLOB
             || (monstermoves <= peek_at_iced_corpse_age(otmp) + 50)) {
-            value = monstr[otmp->corpsenm] + 1;
+            value = mons[otmp->corpsenm].difficulty + 1;
             if (otmp->oeaten)
                 value = eaten_stat(value, otmp);
         }
@@ -1357,7 +1377,7 @@ dosacrifice()
                 goto desecrate_high_altar;
             } else if (altaralign != A_CHAOTIC && altaralign != A_NONE) {
                 /* curse the lawful/neutral altar */
-                pline_The("祭坛被沾染上%s 的血液.", urace.adj);
+                pline_The("祭坛被沾染上%s的血液.", urace.adj);
                 levl[u.ux][u.uy].altarmask = AM_CHAOTIC;
                 angry_priest();
             } else {
@@ -1368,7 +1388,7 @@ dosacrifice()
                 /* is equivalent to demon summoning */
                 if (altaralign == A_CHAOTIC && u.ualign.type != A_CHAOTIC) {
                     pline(
-                    "血液淹没了祭坛, 祭坛消失在%s 云里!",
+                    "血液淹没了祭坛, 祭坛消失在%s云里!",
                           hcolor(NH_BLACK));
                     levl[u.ux][u.uy].typ = ROOM;
                     levl[u.ux][u.uy].altarmask = 0;
@@ -1435,8 +1455,8 @@ dosacrifice()
                 /* When same as altar, always a very bad action.
                  */
                 pline("这样的行为对%s是一种侮辱!",
-                      (unicalign == A_CHAOTIC) ? "混沌"
-                         : unicalign ? "秩序" : "平衡");
+                      (unicalign == A_CHAOTIC) ? "混乱"
+                         : unicalign ? "守序" : "中立");
                 (void) adjattrib(A_WIS, -1, TRUE);
                 value = -5;
             } else if (u.ualign.type == altaralign) {
@@ -1446,7 +1466,7 @@ dosacrifice()
                 if (u.ualign.record < ALIGNLIM)
                     You_feel("合适的 %s.", align_str(u.ualign.type));
                 else
-                    You_feel("你彻底地在正确的道路上.");
+                    You_feel("彻底地在正确的道路上.");
                 adjalign(5);
                 value += 3;
             } else if (unicalign == u.ualign.type) {
@@ -1476,7 +1496,7 @@ dosacrifice()
             else
                 You_feel("%s.",
                          Hallucination
-                            ? "思乡的"
+                            ? "思乡"
                             /* if on track, give a big hint */
                             : (altaralign == u.ualign.type)
                                ? "到返回表面的冲动"
@@ -1498,14 +1518,14 @@ dosacrifice()
                 if (u.ualign.record > -99)
                     u.ualign.record = -99;
                 /*[apparently shrug/snarl can be sensed without being seen]*/
-                pline("%s 耸了耸肩并保持着对%s的统治,", Moloch,
+                pline("%s耸了耸肩并保持着对%s的统治,", Moloch,
                       u_gname());
                 pline("然后残忍地扼杀了你的生命.");
                 Sprintf(killer.name, "%s冷漠", s_suffix(Moloch));
                 killer.format = KILLED_BY;
                 done(DIED);
                 /* life-saved (or declined to die in wizard/explore mode) */
-                pline("%s 怒吼并再来了一次...", Moloch);
+                pline("%s怒吼并再试了一次...", Moloch);
                 fry_by_god(A_NONE, TRUE); /* wrath of Moloch */
                 /* declined to die in wizard or explore mode */
                 pline(cloud_of_smoke, hcolor(NH_BLACK));
@@ -1516,7 +1536,7 @@ dosacrifice()
                 adjalign(-99);
                 pline("%s 接受了你的礼物, 然后获得了对%s的统治...",
                       a_gname(), u_gname());
-                pline("%s 是暴怒的...", u_gname());
+                pline("%s 暴怒...", u_gname());
                 pline("幸运的是, %s 准许你活着...", a_gname());
                 pline(cloud_of_smoke, hcolor(NH_ORANGE));
                 done(ESCAPED);
@@ -1525,7 +1545,7 @@ dosacrifice()
                 u.uachieve.ascended = 1;
                 pline(
                "一个看不见的唱诗班在歌唱, 你沐浴在光辉之中...");
-                godvoice(altaralign, "凡人, 汝做得很好!");
+                godvoice(altaralign, "凡人, 汝做得甚好!");
                 display_nhwindow(WIN_MESSAGE, FALSE);
                 verbalize(
           "为汝之功之报, 吾赐尔不朽之礼!");
@@ -1541,7 +1561,7 @@ dosacrifice()
             goto too_soon;
         You_hear("附近的雷声.");
         if (!otmp->known) {
-            You("认识到你造成了一个%s.",
+            You("认识到你犯了一个%s.",
                 Hallucination ? "疏忽" : "错误");
             otmp->known = TRUE;
             change_luck(-1);
@@ -1771,7 +1791,7 @@ boolean praying; /* false means no messages should be given */
     if (is_demon(youmonst.data) && (p_aligntyp != A_CHAOTIC)) {
         if (praying)
             pline_The("向一个%s神祈祷的想法会让你厌恶.",
-                      p_aligntyp ? "秩序" : "中立");
+                      p_aligntyp ? "守序" : "中立");
         return FALSE;
     }
 
@@ -1859,7 +1879,7 @@ prayer_done() /* M. Stephenson (1.0.3b) */
         godvoice(alignment,
                  (alignment == A_LAWFUL)
                     ? "卑鄙的生物, 汝敢号令吾?"
-                    : "不要再这样走下去了, 是对自然的歪曲!");
+                    : "不要再走了, 大自然的变态!");
         You_feel("你像是四分五裂了.");
         /* KMH -- Gods have mastery over unchanging */
         rehumanize();
@@ -1869,7 +1889,7 @@ prayer_done() /* M. Stephenson (1.0.3b) */
         return 1;
     }
     if (Inhell) {
-        pline("自从你来到了葛汉诺姆, %s 不会再帮助你.",
+        pline("既然你来到了葛汉诺姆, %s 不会再帮助你.",
               align_gname(alignment));
         /* haltingly aligned is least likely to anger */
         if (u.ualign.record <= 0 || rnl(u.ualign.record))
@@ -1939,12 +1959,12 @@ doturn()
         pline("不知何故, %s 似乎无视了你.", u_gname());
         aggravate();
         exercise(A_WIS, FALSE);
-        return 0;
+        return 1;
     }
     if (Inhell) {
-        pline("自从你来到了葛汉诺姆, %s 不会再帮助你.", u_gname());
+        pline("既然你来到了葛汉诺姆, %s 不会再帮助你.", u_gname());
         aggravate();
-        return 0;
+        return 1;
     }
     pline("你咏唱一首奥术式来呼唤 %s.", u_gname());
     exercise(A_WIS, TRUE);
@@ -2077,7 +2097,7 @@ static const char *hallu_gods[] = {
     "克苏鲁",                      /* Lovecraft */
     "the Ori",                      /* Stargate */
     "命运女神",                      /* why not? */
-    "你的朋友电脑",     /* Paranoia */
+    "你的电脑朋友",     /* Paranoia */
 };
 
 /* hallucination handling for priest/minion names: select a random god
@@ -2092,13 +2112,16 @@ aligntyp alignment;
     if (!Hallucination)
         return align_gname(alignment);
 
-    /* The priest may not have initialized god names. If this is the
-     * case, and we roll priest, we need to try again. */
+    /* Some roles (Priest) don't have a pantheon unless we're playing as
+       that role, so keep trying until we get a role which does have one.
+       [If playing a Priest, the current pantheon will be twice as likely
+       to get picked as any of the others.  That's not significant enough
+       to bother dealing with.] */
     do
-        which = randrole();
+        which = randrole(TRUE);
     while (!roles[which].lgod);
 
-    switch (rn2(9)) {
+    switch (rn2_on_display_rng(9)) {
     case 0:
     case 1:
         gnam = roles[which].lgod;
@@ -2113,7 +2136,7 @@ aligntyp alignment;
         break;
     case 6:
     case 7:
-        gnam = hallu_gods[rn2(sizeof hallu_gods / sizeof *hallu_gods)];
+        gnam = hallu_gods[rn2_on_display_rng(SIZE(hallu_gods))];
         break;
     case 8:
         gnam = Moloch;
@@ -2163,11 +2186,11 @@ register int x, y;
     aligntyp altaralign = a_align(x, y);
 
     if (!strcmp(align_gname(altaralign), u_gname())) {
-        godvoice(altaralign, "你竟敢亵渎我的祭坛!");
+        godvoice(altaralign, "汝胆敢亵渎吾之祭坛!");
         (void) adjattrib(A_WIS, -1, FALSE);
     } else {
-        pline("一个声音( 莫非是%s?) 低语:", align_gname(altaralign));
-        verbalize("你要付出代价, 异教徒!");
+        pline("一个声音 (莫非是%s?) 低语:", align_gname(altaralign));
+        verbalize("汝须付出代价, 异教徒!");
         change_luck(-1);
     }
 }
@@ -2178,6 +2201,7 @@ blocked_boulder(dx, dy)
 int dx, dy;
 {
     register struct obj *otmp;
+    int nx, ny;
     long count = 0L;
 
     for (otmp = level.objects[u.ux + dx][u.uy + dy]; otmp;
@@ -2186,6 +2210,7 @@ int dx, dy;
             count += otmp->quan;
     }
 
+    nx = u.ux + 2 * dx, ny = u.uy + 2 * dy; /* next spot beyond boulder(s) */
     switch (count) {
     case 0:
         /* no boulders--not blocked */
@@ -2193,17 +2218,24 @@ int dx, dy;
     case 1:
         /* possibly blocked depending on if it's pushable */
         break;
+    case 2:
+        /* this is only approximate since multiple boulders might sink */
+        if (is_pool_or_lava(nx, ny)) /* does its own isok() check */
+            break; /* still need Sokoban check below */
+        /*FALLTHRU*/
     default:
         /* more than one boulder--blocked after they push the top one;
            don't force them to push it first to find out */
         return TRUE;
     }
 
-    if (!isok(u.ux + 2 * dx, u.uy + 2 * dy))
+    if (dx && dy && Sokoban) /* can't push boulder diagonally in Sokoban */
         return TRUE;
-    if (IS_ROCK(levl[u.ux + 2 * dx][u.uy + 2 * dy].typ))
+    if (!isok(nx, ny))
         return TRUE;
-    if (sobj_at(BOULDER, u.ux + 2 * dx, u.uy + 2 * dy))
+    if (IS_ROCK(levl[nx][ny].typ))
+        return TRUE;
+    if (sobj_at(BOULDER, nx, ny))
         return TRUE;
 
     return FALSE;

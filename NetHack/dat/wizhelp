@@ -26,3 +26,8 @@
 #wizsmell       == smell a monster
 #wizwhere       == 显示所有特殊层的位置
 #wmode          == show wall modes
+
+Options:
+monpolycontrol  == prompt for new form whenever any monster changes shape
+sanity_check    == evaluate monsters, objects, and map prior to each turn
+wizweight       == augment object descriptions with their objects' weight

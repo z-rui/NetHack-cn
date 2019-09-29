@@ -33,11 +33,7 @@ static long final_fpos;
 #define dealloc_ttentry(ttent) free((genericptr_t) (ttent))
 #ifndef NAMSZ
 /* Changing NAMSZ can break your existing record/logfile */
-#ifdef _WINDOWS//如果是在windows上编译
 #define NAMSZ 10
-#else
-#define NAMSZ 15
-#endif
 #endif
 #define DTHSZ 100
 #define ROLESZ 3
@@ -66,7 +62,6 @@ struct toptenentry {
 
 STATIC_DCL void FDECL(topten_print, (const char *));
 STATIC_DCL void FDECL(topten_print_bold, (const char *));
-STATIC_DCL xchar FDECL(observable_depth, (d_level *));
 STATIC_DCL void NDECL(outheader);
 STATIC_DCL void FDECL(outentry, (int, struct toptenentry *, BOOLEAN_P));
 STATIC_DCL void FDECL(discardexcess, (FILE *));
@@ -107,20 +102,11 @@ boolean incl_helpless;
         /* PANICKED, TRICKED, QUIT, ESCAPED, ASCENDED */
         "", "", "", "", ""
     };
+    unsigned l;
+    char c, *kname = killer.name;
 
     buf[0] = '\0'; /* lint suppression */
 
-    if (incl_helpless && multi) {
-        /* X <= siz: 'sizeof "string"' includes 1 for '\0' terminator */
-        if (multi_reason && strlen(multi_reason) + sizeof "在之时, " <= siz)
-            Sprintf(buf, "在%s之时, ", multi_reason);
-        /* either multi_reason wasn't specified or wouldn't fit */
-        else if (sizeof "在无助之时, " <= siz)
-            Strcpy(buf, "在无助之时, ");
-        /* else extra death info won't fit, so leave it out */
-    }
-    
-    char *kname = killer.name;
     switch (killer.format) {
     default:
         impossible("bad killer format? (%d)", killer.format);
@@ -130,14 +116,50 @@ boolean incl_helpless;
         (void) strncat(buf, kname, siz - 1);
         break;
     case KILLED_BY_AN:
-        kname = kname;
+        kname = an(kname);
         /*FALLTHRU*/
     case KILLED_BY:
         if(!strstr(kname,"被")) strcat(buf,"被");
         (void) strcat(buf, kname);
         siz -= strlen(buf);
-        (void) strncat(buf, killed_by_prefix[how], siz - 1);
         break;
+    }
+    /* Copy kname into buf[].
+     * Object names and named fruit have already been sanitized, but
+     * monsters can have "called 'arbitrary text'" attached to them,
+     * so make sure that that text can't confuse field splitting when
+     * record, logfile, or xlogfile is re-read at some later point.
+     */
+    while (--siz > 0) {
+        c = *kname++;
+        if (!c)
+            break;
+        else if (c == ',')
+            c = ';';
+        /* 'xlogfile' doesn't really need protection for '=', but
+           fixrecord.awk for corrupted 3.6.0 'record' does (only
+           if using xlogfile rather than logfile to repair record) */
+        else if (c == '=')
+            c = '_';
+        /* tab is not possible due to use of mungspaces() when naming;
+           it would disrupt xlogfile parsing if it were present */
+        else if (c == '\t')
+            c = ' ';
+        *buf++ = c;
+    }
+    *buf = '\0';
+
+    if (incl_helpless && multi) {
+        /* X <= siz: 'sizeof "string"' includes 1 for '\0' terminator */
+        if (multi_reason && strlen(multi_reason) + sizeof ", while " <= siz)
+            Sprintf(buf, ", while %s", multi_reason);
+        /* either multi_reason wasn't specified or wouldn't fit */
+        else if (sizeof ", while helpless" <= siz)
+            Strcpy(buf, ", while helpless");
+        /* else extra death info won't fit, so leave it out */
+    }
+    if (killer.former != NO_KILLER_PREFIX)
+        (void) strncat(buf, killed_by_prefix[how], siz - 1);
     }
 }
 
@@ -161,7 +183,7 @@ const char *x;
         putstr(toptenwin, ATR_BOLD, x);
 }
 
-STATIC_OVL xchar
+int
 observable_depth(lev)
 d_level *lev;
 {
@@ -795,8 +817,8 @@ boolean so;
     else
         Strcat(linebuf, "   ");
 
-    if(strlen("中")==2) Sprintf(eos(linebuf), " %10ld  %.10s", t1->points ? t1->points : u.urexp, t1->name);
-    if(strlen("中")==3) Sprintf(eos(linebuf), " %10ld  %.15s", t1->points ? t1->points : u.urexp, t1->name);
+    Sprintf(eos(linebuf), " %10ld  %.10s", t1->points ? t1->points : u.urexp,
+            t1->name);
     Sprintf(eos(linebuf), "-%s", t1->plrole);
     if (t1->plrace[0] != '?')
         Sprintf(eos(linebuf), "-%s", t1->plrace);
@@ -810,7 +832,7 @@ boolean so;
     else
         Strcat(linebuf, "  ");
     if (!strncmp("escaped", t1->death, 7)) {
-        Sprintf(eos(linebuf), "逃离了地牢 %s[ 最大层数%d]",
+        Sprintf(eos(linebuf), "逃离了地牢 %s [最大层数%d]",
                 !strncmp(" (", t1->death + 7, 2) ? t1->death + 7 + 2 : "",
                 t1->maxlvl);
         /* fixup for closing paren in "escaped... with...Amulet)[max..." */
@@ -852,7 +874,7 @@ boolean so;
             if (t1->deathdnum != knox_level.dnum)
                 Sprintf(eos(linebuf), "层数%d ", t1->deathlev);
             if (t1->deathlev != t1->maxlvl)
-                Sprintf(eos(linebuf), "[max %d] ", t1->maxlvl);
+                Sprintf(eos(linebuf), "[最大 %d] ", t1->maxlvl);
         }
 
         if (!cnstrcmp(t1->death, "退出")) {

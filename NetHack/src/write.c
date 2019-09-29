@@ -294,7 +294,7 @@ found:
         /* scrolls disappear, spellbooks don't */
         if (paper->oclass == SPBOOK_CLASS) {
             You(
-      "写上你最好的字:  \" 我的日记\", 但它很快消退了.");
+      "写上你最好的字:  \"我的日记\", 但它很快消退了.");
             update_inventory(); /* pen charges */
         } else {
             if (by_descr) {
@@ -302,7 +302,7 @@ found:
                 wipeout_text(namebuf, (6 + MAXULEV - u.ulevel) / 6, 0);
             } else
                 Sprintf(namebuf, "%s 到此一游!", plname);
-            You("写上 \" %s\"  然后卷轴消失了.", namebuf);
+            You("写上 \"%s\" 然后卷轴消失了.", namebuf);
             useup(paper);
         }
         obfree(new_obj, (struct obj *) 0);
@@ -345,7 +345,7 @@ found:
        where the label associated with the type-name isn't known yet */
     new_obj->dknown = label_known(new_obj->otyp, invent) ? 1 : 0;
 
-    new_obj = hold_another_object(new_obj, "哎哟!  %s你的手!",
+    new_obj = hold_another_object(new_obj, "哎哟!  %s了你的手!",
                                   The(aobjnam(new_obj, "滑出")),
                                   (const char *) 0);
     nhUse(new_obj); /* try to avoid complaint about dead assignment */

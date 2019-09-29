@@ -1,4 +1,4 @@
-/* NetHack 3.6	role.c	$NHDT-Date: 1463561393 2016/05/18 08:49:53 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.38 $ */
+/* NetHack 3.6	role.c	$NHDT-Date: 1547086250 2019/01/10 02:10:50 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.56 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985-1999. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -36,7 +36,6 @@ const struct Role roles[] = {
         { "采集者", 0 },  //Collector
         { "馆长", 0 } },  //Curator
       "羽蛇神", "卡玛瑟特利", "修堤库特里", /* Central American */
-	  //"Quetzalcoatl", "Camaxtli", "Huhetotl"
       "Arc",
       "考古学院",  //"the College of Archeology"
       "托尔特克国王墓室",  //"the Tomb of the Toltec Kings",
@@ -79,7 +78,6 @@ const struct Role roles[] = {
         { "头目", "女头目" },  //Chieftain Chieftainess
         { "征服者", "女征服者" } },  //Conqueror Conqueress
       "米特拉", "克罗姆", "赛特", /* Hyborian */
-	  //"Mitra", "Crom", "Set"
       "Bar",
       "原始部落营地",  //"the Camp of the Duali Tribe"
       "原始绿洲",  //"the Duali Oasis"
@@ -122,7 +120,6 @@ const struct Role roles[] = {
         { "漫游者", 0 },  //Rover
         { "开拓者", 0 } },  //Pioneer
       "安努", "_伊师塔", "安沙尔", /* Babylonian */
-	  //"Anu", "_Ishtar", "Anshar"
       "Cav",
       "祖先洞穴",  //"the Caves of the Ancestors"
       "龙巢穴",  //"the Dragon's Lair"
@@ -165,7 +162,6 @@ const struct Role roles[] = {
         { "主治医师", 0 },  //Physician
         { "外科医师", 0 } },  //Chirurgeon
       "_雅典娜", "赫耳墨斯", "波塞冬", /* Greek */
-	  //"_Athena", "Hermes", "Poseidon"
       "Hea",
       "埃皮达鲁斯神庙",  //"the Temple of Epidaurus"
       "科俄斯神庙",  //"the Temple of Coeus"
@@ -207,7 +203,6 @@ const struct Role roles[] = {
         { "爵士", "女爵士" },  //Seignieur Dame
         { "圣骑士", 0 } },  //Paladin
       "鲁格", "_布里吉特", "玛娜曼麦克利尔", /* Celtic */
-	  //"Lugh", "_Brigit", "Manannan Mac Lir"
       "Kni",
       "卡米洛特城堡",  //"Camelot Castle"
       "玻璃岛",  //"the Isle of Glass"
@@ -239,9 +234,9 @@ const struct Role roles[] = {
       SPE_TURN_UNDEAD,
       -4 },
     { { "僧侣", 0 },  //Monk
-      { { "和尚候选人", 0 },  //Candidate
-        { "新和尚", 0 },  //Novice
-        { "入门和尚", 0 },  //Initiate
+      { { "僧侣候选人", 0 },  //Candidate
+        { "新僧侣", 0 },  //Novice
+        { "入门僧侣", 0 },  //Initiate
         { "石之学子", 0 },  //Student of Stones
         { "水之学子", 0 },  //Student of Waters
         { "金属之学子", 0 },  //Student of Metals
@@ -249,7 +244,6 @@ const struct Role roles[] = {
         { "火之学子", 0 },  //Student of Fire
         { "禅师", 0 } },  //Master
       "山雷精", "赤松子", "黄帝", /* Chinese */
-	  //"Shan Lai Ching", "Chih Sung-tzu", "Huan Ti"
       "Mon",
       "禅本寺",  //"the Monastery of Chan-Sune"
       "大地之主寺庙",  //"the Monastery of the Earth-Lord"
@@ -281,7 +275,7 @@ const struct Role roles[] = {
       A_WIS,
       SPE_RESTORE_ABILITY,
       -4 },
-    { { "牧师", "女性牧师" },  //"Priest", "Priestess"
+    { { "牧师", "女牧师" },  //"Priest", "Priestess"
       { { "修道者", 0 },  //Aspirant
         { "侍祭", 0 },  //Acolyte
         { "修行师", 0 },  //Adept
@@ -336,7 +330,6 @@ const struct Role roles[] = {
         { "骗子", "女骗子" },  //Magsman Magswoman
         { "盗圣", 0 } },  //Thief
       "伊赛克", "莫格", "科斯", /* Nehwon */
-	  //"Issek", "Mog", "Kos"
       "Rog",
       "盗贼会馆",  //"the Thieves' Guild Hall"
       "刺客会馆",  //"the Assassins' Guild Hall"
@@ -392,7 +385,6 @@ const struct Role roles[] = {
         { "射手", 0 },  //Sharpshooter
         { "神射手", "女神射手" } },  //Marksman Markswoman
       "墨丘利", "_维纳斯", "马耳斯", /* Roman/planets */
-	  //"Mercury", "_Venus", "Mars"
       "Ran",
       "猎户座营地",  //"Orion's camp"
       "狮头象洞穴",  //"the cave of the wumpus"
@@ -477,7 +469,6 @@ const struct Role roles[] = {
         { "探险家", 0 },  //Explorer
         { "冒险家", 0 } },  //Adventurer
       "盲木卫", "_圣夫人", "昂福尔", /* Discworld */
-	  //"Blind Io", "_The Lady", "Offler"
       "Tou",
       "安科莫波克",  //"Ankh-Morpork"
       "盗贼会馆",  //"the Thieves' Guild Hall"
@@ -519,7 +510,6 @@ const struct Role roles[] = {
         { "冠军", 0 },  //Champion
         { "君主", "女神" } },  //Lady
       "蒂尔", "欧丁神", "洛基", /* Norse */
-	  //"Tyr", "Odin", "Loki"
       "Val",
       "命运之神殿",  //"the Shrine of Destiny"
       "叙尔特洞穴",  //"the cave of Surtur"
@@ -561,7 +551,6 @@ const struct Role roles[] = {
         { "巫师", 0 },  //Wizard
         { "大魔导师", 0 } },  //Mage
       "卜塔", "透特", "安赫", /* Egyptian */
-	  //"Ptah", "Thoth", "Anhur"
       "Wiz",
       "孤独塔",  //"the Lonely Tower"
       "黑暗之塔",  //"the Tower of Darkness"
@@ -632,7 +621,7 @@ const struct Race races[] = {
         "人类",
         "humanity",
         "Hum",
-        { "人", "女人" },
+        { "男人", "女人" },
         PM_HUMAN,
         NON_PM,
         PM_HUMAN_MUMMY,
@@ -771,10 +760,10 @@ const struct Gender genders[] = {
 
 /* Table of all alignments */
 const struct Align aligns[] = {
-    { "law", "秩序", "Law", ROLE_LAWFUL, A_LAWFUL },
+    { "law", "守序", "Law", ROLE_LAWFUL, A_LAWFUL },
     { "balance", "中立", "Neu", ROLE_NEUTRAL, A_NEUTRAL },
-    { "chaos", "混沌", "Cha", ROLE_CHAOTIC, A_CHAOTIC },
-    { "evil", "unaligned", "Una", 0, A_NONE }
+    { "chaos", "混乱", "Cha", ROLE_CHAOTIC, A_CHAOTIC },
+    { "evil", "无阵营", "Una", 0, A_NONE }
 };
 
 /* Filters */
@@ -799,9 +788,16 @@ int rolenum;
 }
 
 int
-randrole()
+randrole(for_display)
+boolean for_display;
 {
-    return rn2(SIZE(roles) - 1);
+    int res = SIZE(roles) - 1;
+
+    if (for_display)
+        res = rn2_on_display_rng(res);
+    else
+        res = rn2(res);
+    return res;
 }
 
 STATIC_OVL int
@@ -817,7 +813,7 @@ randrole_filtered()
             && ok_gend(i, ROLE_NONE, ROLE_RANDOM, ROLE_NONE)
             && ok_align(i, ROLE_NONE, ROLE_NONE, ROLE_RANDOM))
             set[n++] = i;
-    return n ? set[rn2(n)] : randrole();
+    return n ? set[rn2(n)] : randrole(FALSE);
 }
 
 int
@@ -1643,13 +1639,16 @@ int buflen, rolenum, racenum, gendnum, alignnum;
     Strcpy(tmpbuf, "Shall I pick ");
     if (racenum != ROLE_NONE || validrole(rolenum))
         Strcat(tmpbuf, "your ");
-    else {
+    else
         Strcat(tmpbuf, "a ");
-    }
     /* <your> */
 
     (void) root_plselection_prompt(eos(tmpbuf), buflen - strlen(tmpbuf),
                                    rolenum, racenum, gendnum, alignnum);
+    /* "Shall I pick a character's role, race, gender, and alignment for you?"
+       plus " [ynaq] (y)" is a little too long for a conventional 80 columns;
+       also, "pick a character's <anything>" sounds a bit stilted */
+    strsubst(tmpbuf, "pick a character", "pick character");
     Sprintf(buf, "%s", s_suffix(tmpbuf));
     /* don't bother splitting caveman/cavewoman or priest/priestess
        in order to apply possessive suffix to both halves, but do
@@ -1715,14 +1714,15 @@ plnamesuffix()
 
     /* some generic user names will be ignored in favor of prompting */
     if (sysopt.genericusers) {
-	if (*sysopt.genericusers == '*') *plname = '\0';
-	else {
-	    i = (int)strlen(plname);
-	    if ((sptr = strstri(sysopt.genericusers, plname)) != 0
-		&& (sptr == sysopt.genericusers || sptr[-1] == ' ')
-		&& (sptr[i] == ' ' || sptr[i] == '\0'))
-		*plname = '\0'; /* call askname() */
-	}
+        if (*sysopt.genericusers == '*') {
+            *plname = '\0';
+        } else {
+            i = (int) strlen(plname);
+            if ((sptr = strstri(sysopt.genericusers, plname)) != 0
+                && (sptr == sysopt.genericusers || sptr[-1] == ' ')
+                && (sptr[i] == ' ' || sptr[i] == '\0'))
+                *plname = '\0'; /* call askname() */
+        }
     }
 
     do {
@@ -2096,7 +2096,7 @@ role_init()
     if (flags.pantheon == -1) {             /* new game */
         flags.pantheon = flags.initrole;    /* use own gods */
         while (!roles[flags.pantheon].lgod) /* unless they're missing */
-            flags.pantheon = randrole();
+            flags.pantheon = randrole(FALSE);
     }
     if (!urole.lgod) {
         urole.lgod = roles[flags.pantheon].lgod;
@@ -2106,6 +2106,14 @@ role_init()
     /* 0 or 1; no gods are neuter, nor is gender randomized */
     quest_status.godgend = !strcmpi(align_gtitle(alignmnt), "女神");
 
+#if 0
+/*
+ * Disable this fixup so that mons[] can be const.  The only
+ * place where it actually matters for the hero is in set_uasmon()
+ * and that can use mons[race] rather than mons[role] for this
+ * particular property.  Despite the comment, it is checked--where
+ * needed--via instrinsic 'Infravision' which set_uasmon() manages.
+ */
     /* Fix up infravision */
     if (mons[urace.malenum].mflags3 & M3_INFRAVISION) {
         /* although an infravision intrinsic is possible, infravision
@@ -2121,6 +2129,7 @@ role_init()
         if (urole.femalenum != NON_PM)
             mons[urole.femalenum].mflags3 |= M3_INFRAVISION;
     }
+#endif /*0*/
 
     /* Artifacts are fixed in hack_artifacts() */
 
@@ -2159,13 +2168,13 @@ Goodbye()
     case PM_KNIGHT:
         return "珍重"; /* Olde English */
     case PM_SAMURAI:
-        return "撒哟啦啦"; /* Japanese */
+        return "撒哟呐啦"; /* Japanese */
     case PM_TOURIST:
-        return "再见"; /* Hawaiian */
+        return "拜拜"; /* Hawaiian */
     case PM_VALKYRIE:
-        return "再见"; /* Norse */
+        return "再会"; /* Norse */
     default:
-        return "告别";
+        return "再见";
     }
 }
 

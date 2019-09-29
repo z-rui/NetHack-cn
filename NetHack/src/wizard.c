@@ -1,4 +1,4 @@
-/* NetHack 3.6	wizard.c	$NHDT-Date: 1456618999 2016/02/28 00:23:19 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.48 $ */
+/* NetHack 3.6	wizard.c	$NHDT-Date: 1539804905 2018/10/17 19:35:05 $  $NHDT-Branch: keni-makedefsm $:$NHDT-Revision: 1.53 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -10,8 +10,6 @@
 
 #include "hack.h"
 #include "qtext.h"
-
-extern const int monstr[];
 
 STATIC_DCL short FDECL(which_arti, (int));
 STATIC_DCL boolean FDECL(mon_has_arti, (struct monst *, SHORT_P));
@@ -588,7 +586,8 @@ struct monst *summoner;
                     m_cls = mons[makeindex].mlet;
                 } while (summoner
                          && ((attacktype(&mons[makeindex], AT_MAGC)
-                              && monstr[makeindex] >= monstr[summoner->mnum])
+                              && mons[makeindex].difficulty
+                                 >= mons[summoner->mnum].difficulty)
                              || (s_cls == S_DEMON && m_cls == S_ANGEL)
                              || (s_cls == S_ANGEL && m_cls == S_DEMON)));
                 /* do this after picking the monster to place */
@@ -630,14 +629,14 @@ resurrect()
 
     if (!context.no_of_wizards) {
         /* make a new Wizard */
-        verb = "杀";
+        verb = "kill";
         mtmp = makemon(&mons[PM_WIZARD_OF_YENDOR], u.ux, u.uy, MM_NOWAIT);
         /* affects experience; he's not coming back from a corpse
            but is subject to repeated killing like a revived corpse */
         if (mtmp) mtmp->mrevived = 1;
     } else {
         /* look for a migrating Wizard */
-        verb = "避";
+        verb = "elude";
         mmtmp = &migrating_mons;
         while ((mtmp = *mmtmp) != 0) {
             if (mtmp->iswiz
@@ -668,8 +667,8 @@ resurrect()
         mtmp->mtame = mtmp->mpeaceful = 0; /* paranoia */
         set_malign(mtmp);
         if (!Deaf) {
-            pline("一个声音传出...");
-            verbalize("故君以汝能%s我, 痴人.", verb);
+            pline("A voice booms out...");
+            verbalize("So thou thought thou couldst %s me, fool.", verb);
         }
     }
 }
@@ -684,11 +683,11 @@ intervene()
     switch (which) {
     case 0:
     case 1:
-        You_feel("到不明的紧张.");
+        You_feel("vaguely nervous.");
         break;
     case 2:
         if (!Blind)
-            You("注意到一个%s光环围绕着你.", hcolor(NH_BLACK));
+            You("notice a %s glow surrounding you.", hcolor(NH_BLACK));
         rndcurse();
         break;
     case 3:
@@ -747,11 +746,11 @@ register struct monst *mtmp;
             verbalize("交出护身符, %s!",
                       random_insult[rn2(SIZE(random_insult))]);
         else if (u.uhp < 5 && !rn2(2)) /* Panic */
-            verbalize(rn2(2) ? "即使现在你的生命力正在衰减, %s!"
-                             : "尽情享受你的呼吸, %s, 这是你最后一次!",
+            verbalize(rn2(2) ? "即使现在汝的生命力正在衰减, %s!"
+                             : "尽情享受汝的呼吸, %s, 这是汝最后一次!",
                       random_insult[rn2(SIZE(random_insult))]);
         else if (mtmp->mhp < 5 && !rn2(2)) /* Parthian shot */
-            verbalize(rn2(2) ? "我会回来的." : "我马上回来.");
+            verbalize(rn2(2) ? "吾会再来." : "我会回来的.");
         else
             verbalize("%s %s!",
                       random_malediction[rn2(SIZE(random_malediction))],

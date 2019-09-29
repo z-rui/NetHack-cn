@@ -1,4 +1,4 @@
-/* NetHack 3.6	music.c	$NHDT-Date: 1517877381 2018/02/06 00:36:21 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.47 $ */
+/* NetHack 3.6  music.c $NHDT-Date: 1544442713 2018/12/10 11:51:53 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.57 $ */
 /*      Copyright (c) 1989 by Jean-Christophe Collet */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -249,19 +249,15 @@ int force;
     unsigned tu_pit = 0;
 
     if (trap_at_u)
-        tu_pit = (trap_at_u->ttyp == PIT || trap_at_u->ttyp == SPIKED_PIT);
+        tu_pit = is_pit(trap_at_u->ttyp);
     start_x = u.ux - (force * 2);
     start_y = u.uy - (force * 2);
     end_x = u.ux + (force * 2);
     end_y = u.uy + (force * 2);
-    if (start_x < 1)
-        start_x = 1;
-    if (start_y < 1)
-        start_y = 1;
-    if (end_x >= COLNO)
-        end_x = COLNO - 1;
-    if (end_y >= ROWNO)
-        end_y = ROWNO - 1;
+    start_x = max(start_x, 1);
+    start_y = max(start_y, 0);
+    end_x = min(end_x, COLNO - 1);
+    end_y = min(end_y, ROWNO - 1);
     for (x = start_x; x <= end_x; x++)
         for (y = start_y; y <= end_y; y++) {
             if ((mtmp = m_at(x, y)) != 0) {
@@ -311,6 +307,11 @@ int force;
                         break; /* no pit if portal at that location */
                     chasm->tseen = 1;
 
+                    /* TODO:
+                     * This ought to be split into a separate routine to
+                     * reduce indentation and the consequent line-wraps.
+                     */
+
                     levl[x][y].doormask = 0;
                     /*
                      * Let liquid flow into the newly created chasm.
@@ -319,7 +320,7 @@ int force;
                      */
                     filltype = fillholetyp(x, y, FALSE);
                     if (filltype != ROOM) {
-                        levl[x][y].typ = filltype;
+                        levl[x][y].typ = filltype; /* flags set via doormask */
                         liquid_flow(x, y, filltype, chasm, (char *) 0);
                     }
 
@@ -329,7 +330,7 @@ int force;
                         if (cansee(x, y))
                             pline("嘣! 巨石掉进了%s裂缝!",
                                   ((x == u.ux) && (y == u.uy)) ? " 你下面的"
-                                                               : "");
+                                                           : "");
                         if (mtmp)
                             mtmp->mtrapped = 0;
                         obj_extract_self(otmp);
@@ -343,6 +344,7 @@ int force;
                         if (!is_flyer(mtmp->data)
                             && !is_clinger(mtmp->data)) {
                             boolean m_already_trapped = mtmp->mtrapped;
+
                             mtmp->mtrapped = 1;
                             if (!m_already_trapped) { /* suppress messages */
                                 if (cansee(x, y))
@@ -354,9 +356,9 @@ int force;
                             /* Falling is okay for falling down
                                 within a pit from jostling too */
                             mselftouch(mtmp, "掉落, ", TRUE);
-                            if (mtmp->mhp > 0) {
+                            if (!DEADMONSTER(mtmp)) {
                                 mtmp->mhp -= rnd(m_already_trapped ? 4 : 6);
-                                if (mtmp->mhp <= 0) {
+                                if (DEADMONSTER(mtmp)) {
                                     if (!cansee(x, y)) {
                                         pline("它被消灭了!");
                                     } else {
@@ -375,6 +377,16 @@ int force;
                             }
                         }
                     } else if (x == u.ux && y == u.uy) {
+                        if (u.utrap && u.utraptype == TT_BURIEDBALL) {
+                            /* Note:  the chain should break if a pit gets
+                               created at the buried ball's location, which
+                               is not necessarily here.  But if we don't do
+                               things this way, entering the new pit below
+                               will override current trap anyway, but too
+                               late to get Lev and Fly handling. */
+                            Your("链条断了!");
+                            reset_utrap(TRUE);
+                        }
                         if (Levitation || Flying
                             || is_clinger(youmonst.data)) {
                             if (!tu_pit) { /* no pit here previously */
@@ -384,10 +396,9 @@ int force;
                         } else if (!tu_pit || !u.utrap
                                    || (u.utrap && u.utraptype != TT_PIT)) {
                             /* no pit here previously, or you were
-                               not in it even it there was */
+                               not in it even if there was */
                             You("掉进了裂缝!");
-                            u.utrap = rn1(6, 2);
-                            u.utraptype = TT_PIT;
+                            set_utrap(rn1(6, 2), TT_PIT);
                             losehp(Maybe_Half_Phys(rnd(6)),
                                    "掉落进裂缝", NO_KILLER_PREFIX);
                             selftouch("掉落, 你");
@@ -397,8 +408,7 @@ int force;
                                  || (!rnl(Role_if(PM_ARCHEOLOGIST) ? 3 : 9))
                                  || ((ACURR(A_DEX) > 7) && rn2(5)));
                             You("到处被剧烈地撞击!");
-                            u.utrap = rn1(6, 2);
-                            u.utraptype = TT_PIT; /* superfluous */
+                            set_utrap(rn1(6, 2), TT_PIT);
                             losehp(Maybe_Half_Phys(rnd(keepfooting ? 2 : 4)),
                                    "在裂缝受伤", NO_KILLER_PREFIX);
                             if (keepfooting)
@@ -445,6 +455,11 @@ generic_lvl_desc()
         return "地牢";
 }
 
+const char *beats[] = {
+    "stepper", "one drop", "slow two", "triple stroke roll",
+    "double shuffle", "half-time shuffle", "second line", "train"
+};
+
 /*
  * The player is trying to extract something from his/her instrument.
  */
@@ -454,6 +469,7 @@ struct obj *instr;
 {
     int damage, mode, do_spec = !(Stunned || Confusion);
     struct obj itmp;
+    boolean mundane = FALSE;
 
     itmp = *instr;
     itmp.oextra = (struct oextra *) 0; /* ok on this copy as instr maintains
@@ -462,8 +478,10 @@ struct obj *instr;
 
     /* if won't yield special effect, make sound of mundane counterpart */
     if (!do_spec || instr->spe <= 0)
-        while (objects[itmp.otyp].oc_magic)
+        while (objects[itmp.otyp].oc_magic) {
             itmp.otyp -= 1;
+            mundane = TRUE;
+        }
 #ifdef MAC
     mac_speaker(&itmp, "C");
 #endif
@@ -510,7 +528,7 @@ struct obj *instr;
     case PLAY_CONFUSED | PLAY_HALLU:
     case PLAY_STUNNED | PLAY_CONFUSED | PLAY_HALLU:
     default:
-        pline("你产生出的远不是音乐...");
+        pline("你发出的完全不是音乐...");
         break;
     }
 #undef PLAY_NORMAL
@@ -579,6 +597,10 @@ struct obj *instr;
         exercise(A_DEX, TRUE);
         break;
     case DRUM_OF_EARTHQUAKE: /* create several pits */
+        /* a drum of earthquake does not cause deafness
+           while still magically functional, nor afterwards
+           when it invokes the LEATHER_DRUM case instead and
+           mundane is flagged */
         consume_obj_charge(instr, TRUE);
 
         You("产生出一个巨大的, 雷鸣般的轰鸣!");
@@ -589,10 +611,15 @@ struct obj *instr;
         makeknown(DRUM_OF_EARTHQUAKE);
         break;
     case LEATHER_DRUM: /* Awaken monsters */
-        You("拍打出一个震耳欲聋响声!");
-        awaken_monsters(u.ulevel * 40);
-        incr_itimeout(&HDeaf, rn1(20, 30));
-        exercise(A_WIS, FALSE);
+        if (!mundane) {
+            You("拍打出一个震耳欲聋的响声!");
+            incr_itimeout(&HDeaf, rn1(20, 30));
+            exercise(A_WIS, FALSE);
+        } else
+            You("%s %s.",
+                rn2(2) ? "butcher" : rn2(2) ? "manage" : "pull off",
+                an(beats[rn2(SIZE(beats))]));
+        awaken_monsters(u.ulevel * (mundane ? 5 : 40));
         context.botl = TRUE;
         break;
     default:

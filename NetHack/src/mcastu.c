@@ -38,6 +38,7 @@ enum mcast_cleric_spells {
 STATIC_DCL void FDECL(cursetxt, (struct monst *, BOOLEAN_P));
 STATIC_DCL int FDECL(choose_magic_spell, (int));
 STATIC_DCL int FDECL(choose_clerical_spell, (int));
+STATIC_DCL int FDECL(m_cure_self, (struct monst *, int));
 STATIC_DCL void FDECL(cast_wizard_spell, (struct monst *, int, int));
 STATIC_DCL void FDECL(cast_cleric_spell, (struct monst *, int, int));
 STATIC_DCL boolean FDECL(is_undirected_spell, (unsigned int, int));
@@ -336,6 +337,22 @@ boolean foundyou;
     return (ret);
 }
 
+STATIC_OVL int
+m_cure_self(mtmp, dmg)
+struct monst *mtmp;
+int dmg;
+{
+    if (mtmp->mhp < mtmp->mhpmax) {
+        if (canseemon(mtmp))
+            pline("%s看起来好些了.", Monnam(mtmp));
+        /* note: player healing does 6d4; this used to do 1d8 */
+        if ((mtmp->mhp += d(3, 6)) > mtmp->mhpmax)
+            mtmp->mhp = mtmp->mhpmax;
+        dmg = 0;
+    }
+    return dmg;
+}
+
 /* monster wizard and cleric spellcasting functions */
 /*
    If dmg is zero, then the monster is not casting at you.
@@ -474,14 +491,7 @@ int spellnum;
         dmg = 0;
         break;
     case MGC_CURE_SELF:
-        if (mtmp->mhp < mtmp->mhpmax) {
-            if (canseemon(mtmp))
-                pline("%s 看起来好些了.", Monnam(mtmp));
-            /* note: player healing does 6d4; this used to do 1d8 */
-            if ((mtmp->mhp += d(3, 6)) > mtmp->mhpmax)
-                mtmp->mhp = mtmp->mhpmax;
-            dmg = 0;
-        }
+        dmg = m_cure_self(mtmp, dmg);
         break;
     case MGC_PSI_BOLT:
         /* prior to 3.4.0 Antimagic was setting the damage to 1--this
@@ -613,7 +623,7 @@ int spellnum;
                 You_hear("某人在召唤%s.", makeplural(what));
             } else {
                 /* unseen caster summoned seen critter(s) */
-                arg = (newseen == oldseen + 1) ? the(what) : makeplural(what);
+                arg = (newseen == oldseen + 1) ? an(what) : makeplural(what);
                 if (!Deaf)
                     You_hear("某人在召唤什么东西, 然后%s %s了.", arg,
                              vtense(arg, "出现"));
@@ -688,21 +698,14 @@ int spellnum;
                 dmg = (dmg + 1) / 2;
             make_confused(HConfusion + dmg, TRUE);
             if (Hallucination)
-                You_feel("%s!", oldprop ? "更幻觉的" : "幻觉的");
+                You_feel("%s!", oldprop ? "更幻觉" : "幻觉");
             else
-                You_feel("%s混乱的!", oldprop ? "更加" : "");
+                You_feel("%s混乱!", oldprop ? "更加" : "");
         }
         dmg = 0;
         break;
     case CLC_CURE_SELF:
-        if (mtmp->mhp < mtmp->mhpmax) {
-            if (canseemon(mtmp))
-                pline("%s 看起来好些了.", Monnam(mtmp));
-            /* note: player healing does 6d4; this used to do 1d8 */
-            if ((mtmp->mhp += d(3, 6)) > mtmp->mhpmax)
-                mtmp->mhp = mtmp->mhpmax;
-            dmg = 0;
-        }
+        dmg = m_cure_self(mtmp, dmg);
         break;
     case CLC_OPEN_WOUNDS:
         if (Antimagic) {
@@ -710,7 +713,7 @@ int spellnum;
             dmg = (dmg + 1) / 2;
         }
         if (dmg <= 5)
-            Your("皮肤片刻严重的发痒.");
+            Your("皮肤一阵严重的发痒.");
         else if (dmg <= 10)
             pline("你的身体出现伤口!");
         else if (dmg <= 20)

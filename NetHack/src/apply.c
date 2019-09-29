@@ -1,4 +1,4 @@
-/* NetHack 3.6	apply.c	$NHDT-Date: 1519598527 2018/02/25 22:42:07 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.243 $ */
+/* NetHack 3.6	apply.c	$NHDT-Date: 1553363415 2019/03/23 17:50:15 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.272 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -215,12 +215,9 @@ int rx, ry, *resp;
             /* (most corpses don't retain the monster's sex, so
                we're usually forced to use generic pronoun here) */
             if (mtmp) {
-                mptr = &mons[mtmp->mnum];
-                /* can't use mhe() here; it calls pronoun_gender() which
-                   expects monster to be on the map (visibility check) */
-                if ((humanoid(mptr) || (mptr->geno & G_UNIQ)
-                     || type_is_pname(mptr)) && !is_neuter(mptr))
-                    gndr = (int) mtmp->female;
+                mptr = mtmp->data = &mons[mtmp->mnum];
+                /* TRUE: override visibility check--it's not on the map */
+                gndr = pronoun_gender(mtmp, TRUE);
             } else {
                 mptr = &mons[corpse->corpsenm];
                 if (is_female(mptr))
@@ -244,7 +241,7 @@ int rx, ry, *resp;
         int visglyph, corpseglyph;
 
         visglyph = glyph_at(rx, ry);
-        corpseglyph = obj_to_glyph(corpse);
+        corpseglyph = obj_to_glyph(corpse, rn2);
 
         if (Blind && (visglyph != corpseglyph))
             map_object(corpse, TRUE);
@@ -387,7 +384,7 @@ register struct obj *obj;
         } else if (mtmp->mappearance) {
             const char *what = "东西";
 
-            switch (mtmp->m_ap_type) {
+            switch (M_AP_TYPE(mtmp)) {
             case M_AP_OBJECT:
                 what = simple_typename(mtmp->mappearance);
                 break;
@@ -471,7 +468,7 @@ struct obj *obj;
 
         /* it's magic!  it works underwater too (at a higher pitch) */
         You(whistle_str,
-            Hallucination ? "标准的" : Underwater ? "奇怪的, 尖锐的"
+            Hallucination ? "normal" : Underwater ? "strange, high-pitched"
                                                   : "奇怪的");
         for (mtmp = fmon; mtmp; mtmp = nextmon) {
             nextmon = mtmp->nmon; /* trap might kill mon */
@@ -489,7 +486,7 @@ struct obj *obj;
                 }
                 /* mimic must be revealed before we know whether it
                    actually moves because line-of-sight may change */
-                if (mtmp->m_ap_type)
+                if (M_AP_TYPE(mtmp))
                     seemimic(mtmp);
                 omx = mtmp->mx, omy = mtmp->my;
                 mnexto(mtmp);
@@ -767,7 +764,7 @@ register xchar x, y;
                        corpse less likely to remain tame after revival */
                     xkilled(mtmp, XKILL_NOMSG);
                     /* life-saving doesn't ordinarily reset this */
-                    if (mtmp->mhp > 0)
+                    if (!DEADMONSTER(mtmp))
                         u.uconduct.killer = save_pacifism;
                 } else {
                     pline("%s 被狗链所窒息!", Monnam(mtmp));
@@ -902,7 +899,7 @@ struct obj *obj;
     mlet = mtmp->data->mlet;
     if (mtmp->msleeping) {
         if (vis)
-            pline("%s 很累来看你的%s.", Monnam(mtmp),
+            pline("%s 累得无法来看你的%s.", Monnam(mtmp),
                   mirror);
     } else if (!mtmp->mcansee) {
         if (vis)
@@ -956,9 +953,20 @@ struct obj *obj;
             (void) rloc(mtmp, TRUE);
     } else if (!is_unicorn(mtmp->data) && !humanoid(mtmp->data)
                && (!mtmp->minvis || perceives(mtmp->data)) && rn2(5)) {
-        if (vis)
-            pline("%s 被它的映像吓到了.", Monnam(mtmp));
-        monflee(mtmp, d(2, 4), FALSE, FALSE);
+        boolean do_react = TRUE;
+
+        if (mtmp->mfrozen) {
+            if (vis)
+		You("从%s 看不出明显的反应.", mon_nam(mtmp));
+            else
+                You_feel("用镜子对着那个方向有点傻.");
+            do_react = FALSE;
+        }
+        if (do_react) {
+            if (vis)
+                pline("%s 被它的映像吓到了.", Monnam(mtmp));
+            monflee(mtmp, d(2, 4), FALSE, FALSE);
+        }
     } else if (!Blind) {
         if (mtmp->minvis && !See_invisible)
             ;
@@ -1213,7 +1221,7 @@ struct obj **optr;
                       (obj->quan > 1L) ? "它们" : "它",
                       (obj->quan > 1L) ? "它们" : "它");
         if (obj->quan < 7L && otmp->spe == 7)
-            pline("%s现在有7 个%s蜡烛附加在上面.", The(xname(otmp)),
+            pline("%s现在有七个%s蜡烛附加在上面.", The(xname(otmp)),
                   otmp->lamplit ? "点着的" : "");
         /* candelabrum's light range might increase */
         if (otmp->lamplit)
@@ -1816,7 +1824,7 @@ struct obj *obj;
     if (!(corpse = floorfood("装罐", 2)))  //tin
         return;
     if (corpse->oeaten) {
-        You("不能装罐%s被部分食用了.", something);
+        You("不能装罐被部分食用了的%s.", something);
         return;
     }
     if (touch_petrifies(&mons[corpse->corpsenm]) && !Stone_resistance
@@ -1914,7 +1922,6 @@ struct obj *obj;
             if (Deaf) /* make_deaf() won't give feedback when already deaf */
                 pline("似乎没有事情发生.");
             make_deaf((HDeaf & TIMEOUT) + lcount, TRUE);
-            context.botl = TRUE;
             break;
         }
         return;
@@ -2041,10 +2048,12 @@ struct obj *obj;
         }
     }
 
+    if (did_attr || did_prop)
+        context.botl = TRUE;
     if (did_attr)
         pline("这让你感觉%s!",
               (did_prop + did_attr) == (trouble_count + unfixable_trbl)
-                  ? "极好的"
+                  ? "极好"
                   : "更好了");
     else if (!did_prop)
         pline("似乎没有事情发生.");
@@ -2101,13 +2110,15 @@ long timeout;
         and_vanish[0] = '\0';
         if ((mtmp->minvis && !See_invisible)
             || (mtmp->data->mlet == S_MIMIC
-                && mtmp->m_ap_type != M_AP_NOTHING))
+                && M_AP_TYPE(mtmp) != M_AP_NOTHING))
             suppress_see = TRUE;
 
         if (mtmp->mundetected) {
             if (hides_under(mtmp->data) && mshelter) {
                 Sprintf(and_vanish, "并%s在%s 下",
                         locomotion(mtmp->data, "爬行"), doname(mshelter));
+                Sprintf(and_vanish, " and %s under %s",
+                        locomotion(mtmp->data, "crawl"), doname(mshelter));
             } else if (mtmp->data->mlet == S_MIMIC
                        || mtmp->data->mlet == S_EEL) {
                 suppress_see = TRUE;
@@ -2128,7 +2139,7 @@ long timeout;
         case OBJ_FLOOR:
             if (cansee_spot && !silent) {
                 if (suppress_see)
-                    pline("%s 突然消失了!", xname(figurine));
+                    pline("%s 突然消失了!", an(xname(figurine)));
                 else
                     You_see("一个小雕像变成%s%s!", monnambuf,
                             and_vanish);
@@ -2236,13 +2247,14 @@ struct obj **optr;
     /* Passing FALSE arg here will result in messages displayed */
     if (!figurine_location_checks(obj, &cc, FALSE))
         return;
-    You("%s然后它变形了.",
+    You("%s然后它%s变形了.",
         (u.dx || u.dy) ? "把小雕像安置在你旁边"
                        : (Is_airlevel(&u.uz) || Is_waterlevel(&u.uz)
                           || is_pool(cc.x, cc.y))
                              ? "释放出小雕像"
                              : (u.dz < 0 ? "把小雕像抛到空中"
-                                         : "把小雕像安置在地上"));
+                                         : "把小雕像安置在地上"),
+        Blind ? "应该" : "");
     (void) make_familiar(obj, cc.x, cc.y, FALSE);
     (void) stop_timer(FIG_TRANSFORM, obj_to_any(obj));
     useup(obj);
@@ -2389,7 +2401,7 @@ struct obj *tstone;
             if (!obj->known) /* note: not "whetstone" */
                 You("一定认为这是一块磨石, 是吗?");
             else
-                pline("%s有些潮湿的.", Tobjnam(tstone, "是"));
+                pline("%s更加潮湿的.", Tobjnam(tstone, "是"));
             return;
         case WAX:
             streak_color = "蜡色的";
@@ -2490,7 +2502,7 @@ struct obj *otmp;
     ttyp = (otmp->otyp == LAND_MINE) ? LANDMINE : BEAR_TRAP;
     if (otmp == trapinfo.tobj && u.ux == trapinfo.tx && u.uy == trapinfo.ty) {
         You("重新设置%s%s.", shk_your(buf, otmp),
-            defsyms[trap_to_defsym(what_trap(ttyp))].explanation);
+            defsyms[trap_to_defsym(what_trap(ttyp, rn2))].explanation);
         set_occupation(set_trap, occutext, 0);
         return;
     }
@@ -2515,7 +2527,8 @@ struct obj *otmp;
             chance = (rnl(10) > 5);
         You("没有非常熟练从%s 够到.", mon_nam(u.usteed));
         Sprintf(buf, "继续尝试设置%s?",
-                the(defsyms[trap_to_defsym(what_trap(ttyp))].explanation));
+                the(defsyms[trap_to_defsym(what_trap(ttyp, rn2))]
+                    .explanation));
         if (yn(buf) == 'y') {
             if (chance) {
                 switch (ttyp) {
@@ -2526,7 +2539,7 @@ struct obj *otmp;
                 case BEAR_TRAP: /* drop it without arming it */
                     reset_trapset();
                     You("扔下%s!",
-                        the(defsyms[trap_to_defsym(what_trap(ttyp))]
+                        the(defsyms[trap_to_defsym(what_trap(ttyp, rn2))]
                                 .explanation));
                     dropx(otmp);
                     return;
@@ -2538,7 +2551,7 @@ struct obj *otmp;
         }
     }
     You("开始设置%s%s.", shk_your(buf, otmp),
-        defsyms[trap_to_defsym(what_trap(ttyp))].explanation);
+        defsyms[trap_to_defsym(what_trap(ttyp, rn2))].explanation);
     set_occupation(set_trap, occutext, 0);
     return;
 }
@@ -2571,7 +2584,7 @@ set_trap()
         }
         if (!trapinfo.force_bungle)
             You("完成安装%s.",
-                the(defsyms[trap_to_defsym(what_trap(ttyp))].explanation));
+                the(defsyms[trap_to_defsym(what_trap(ttyp, rn2))].explanation));
         if (((otmp->cursed || Fumbling) && (rnl(10) > 5))
             || trapinfo.force_bungle)
             dotrap(ttmp,
@@ -2727,7 +2740,7 @@ struct obj *obj;
                 if (!mtmp || enexto(&cc, rx, ry, youmonst.data)) {
                     You("把你自己猛拉出了坑!");
                     teleds(cc.x, cc.y, TRUE);
-                    u.utrap = 0;
+                    reset_utrap(TRUE);
                     vision_full_recalc = 1;
                 }
             } else {
@@ -2740,7 +2753,7 @@ struct obj *obj;
 
     } else if (mtmp) {
         if (!canspotmon(mtmp) && !glyph_is_invisible(levl[rx][ry].glyph)) {
-            pline("有一只怪物在那儿你看不见.");
+            pline("有一只你看不见的怪物在那儿.");
             map_invisible(rx, ry);
         }
         otmp = MON_WEP(mtmp); /* can be null */
@@ -2865,7 +2878,9 @@ coord *pos;
 int min_range, max_range;
 {
     struct monst *mtmp;
-    struct monst *selmon = (struct monst *) 0;
+    coord mpos;
+    boolean impaired;
+    int x, y, lo_x, hi_x, lo_y, hi_y, rt, glyph;
 
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
         if (mtmp && !DEADMONSTER(mtmp) && !mtmp->mtame
@@ -2876,10 +2891,10 @@ int min_range, max_range;
                 return FALSE;
             selmon = mtmp;
         }
-    if (!selmon)
-        return FALSE;
-    pos->x = selmon->mx;
-    pos->y = selmon->my;
+    }
+    if (!mpos.x)
+        return FALSE; /* no candidate location */
+    *pos = mpos;
     return TRUE;
 }
 
@@ -2887,8 +2902,8 @@ static int polearm_range_min = -1;
 static int polearm_range_max = -1;
 
 STATIC_OVL boolean
-get_valid_polearm_position(x,y)
-int x,y;
+get_valid_polearm_position(x, y)
+int x, y;
 {
     return (isok(x, y) && ACCESSIBLE(levl[x][y].typ)
             && distu(x, y) >= polearm_range_min
@@ -2984,10 +2999,10 @@ struct obj *obj;
 
     glyph = glyph_at(cc.x, cc.y);
     if (distu(cc.x, cc.y) > max_range) {
-        pline("太远了!");
+        pline("Too far!");
         return res;
     } else if (distu(cc.x, cc.y) < min_range) {
-        pline("太近了!");
+        pline("Too close!");
         return res;
     } else if (!cansee(cc.x, cc.y) && !glyph_is_monster(glyph)
                && !glyph_is_invisible(glyph) && !glyph_is_statue(glyph)) {
@@ -2998,7 +3013,7 @@ struct obj *obj;
         return res;
     }
 
-    context.polearm.hitmon = NULL;
+    context.polearm.hitmon = (struct monst *) 0;
     /* Attack the monster there */
     bhitpos = cc;
     if ((mtmp = m_at(bhitpos.x, bhitpos.y)) != (struct monst *) 0) {
@@ -3363,7 +3378,7 @@ struct obj *obj;
                  */
                 typ = fillholetyp(x, y, FALSE);
                 if (typ != ROOM) {
-                    levl[x][y].typ = typ;
+                    levl[x][y].typ = typ, levl[x][y].flags = 0;
                     liquid_flow(x, y, typ, t_at(x, y),
                                 fillmsg
                                   ? (char *) 0

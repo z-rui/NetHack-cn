@@ -6,6 +6,8 @@
 #include "hack.h"
 #include "lev.h"
 
+#define CNCHAR_WIDTH (sizeof "中" - 1)
+
 STATIC_VAR NEARDATA struct engr *head_engr;
 
 void
@@ -16,11 +18,9 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
     char *s = str;
     boolean is_ascii;
     int step;
-    int cnchar = strlen("中");
     while (s <= ch) {
         is_ascii = FALSE;
-        if (cnchar == 3)
-		{
+        if (CNCHAR_WIDTH == 3) { // kludge, UTF-8
             if (((*s & 0xf8) == 0xf0) && ((*(s + 1) & 0xc0) == 0x80)
                 && ((*(s + 2) & 0xc0) == 0x80) && ((*(s + 3) & 0xc0) == 0x80))
                 step = 4;
@@ -33,17 +33,14 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
                 step = 1;
                 is_ascii = TRUE;
             }
-		}
-		else
-		{
-            if (((*s & 0x80) == 0x80) && ((*(s + 1) & 0x80) == 0x80))
+        } else { // GB2312
+            if (((*s & 0x80) == 0x80) && ((*(s + 1) & 0x80) == 0x80)) {
                 step = 2;
-            else
-			{
+            } else {
                 step = 1;
                 is_ascii = TRUE;
-			}
-		}
+            }
+        }
         s += step;
     }
     
@@ -62,19 +59,16 @@ int rep;    /* rep: replace `ch` with `rep` if `ch` is an ascii */
         } else {
             --s;
             int r = rnd(5);
-            if (cnchar == 3)
-			{
+            if (CNCHAR_WIDTH == 3) {
                 if ((unsigned char) (*s + r) <= (unsigned char) (0xbf))
                     *s += r;
                 else if ((unsigned char) (*s - r) >= (unsigned char) (0x80))
                     *s -= r;
-			}
-			else
-			{
+            } else {
                 if ((unsigned char) (*s + r) <= (unsigned char) (0x80))
-					r = -r;
+                    r = -r;
                 *s += r;
-			}
+            }
         }
     }
 }
@@ -88,10 +82,9 @@ char *outbuf;
     /* a random engraving may come from the "rumors" file,
        or from the "engrave" file (formerly in an array here) */
     if (!rn2(4) || !(rumor = getrumor(0, outbuf, TRUE)) || !*rumor)
-        (void) get_rnd_text(ENGRAVEFILE, outbuf);
+        (void) get_rnd_text(ENGRAVEFILE, outbuf, rn2);
 
-    wipeout_text(outbuf, (int) (strlen(outbuf) / (4*strlen("中"))), 0);
-
+    wipeout_text(outbuf, (int) (strlen(outbuf) / 4), 0);
     return outbuf;
 }
 
@@ -544,6 +537,7 @@ doengrave()
     boolean teleengr = FALSE; /* TRUE if we move the old engraving */
     boolean zapwand = FALSE;  /* TRUE if we remove a wand charge */
     xchar type = DUST;        /* Type of engraving made */
+    xchar oetype = 0;         /* will be set to type of current engraving */
     char buf[BUFSZ];          /* Buffer for final/poly engraving text */
     char ebuf[BUFSZ];         /* Buffer for initial engraving text */
     char fbuf[BUFSZ];         /* Buffer for "your fingers" */
@@ -566,6 +560,8 @@ doengrave()
     ebuf[0] = (char) 0;
     post_engr_text[0] = (char) 0;
     maxelen = BUFSZ - 1;
+    if (oep)
+        oetype = oep->engr_type;
     if (is_demon(youmonst.data) || youmonst.data->mlet == S_VAMPIRE)
         type = ENGR_BLOOD;
 
@@ -620,7 +616,7 @@ doengrave()
      * while both your hands are tied up.
      */
     if (!freehand() && otmp != uwep && !otmp->owornmask) {
-        You("没有空%s 来写!", body_part(HAND));
+        You("没有空闲的%s 来写!", body_part(HAND));
         return 0;
     }
 
@@ -679,15 +675,15 @@ doengrave()
     /* Objects too large to engrave with */
     case BALL_CLASS:
     case ROCK_CLASS:
-        You_cant("用大东西来刻写!");
+        You_cant("用这么大的东西来刻写!");
         ptext = FALSE;
         break;
     /* Objects too silly to engrave with */
     case FOOD_CLASS:
     case SCROLL_CLASS:
     case SPBOOK_CLASS:
-        pline("%s 会变得%s.", Yname2(otmp),
-              is_ice(u.ux, u.uy) ? "结霜" : "太脏");
+        pline("%s 会%s.", Yname2(otmp),
+              is_ice(u.ux, u.uy) ? "结霜" : "变得太脏");
         ptext = FALSE;
         break;
     case RANDOM_CLASS: /* This should mean fingers */
@@ -748,6 +744,14 @@ doengrave()
                     if (!Blind) {
                         type = (xchar) 0; /* random */
                         (void) random_engraving(buf);
+                    } else {
+                        /* keep the same type so that feels don't
+                           change and only the text is altered,
+                           but you won't know anyway because
+                           you're a _blind writer_ */
+                        if (oetype)
+                            type = oetype;
+                        xcrypt(blengr(), buf);
                     }
                     dengr = TRUE;
                 }
@@ -920,7 +924,7 @@ doengrave()
 
     case VENOM_CLASS:
         if (wizard) {
-            pline("写一封黑信??");
+            pline("写一封毒笔信??");
             break;
         }
         /*FALLTHRU*/
@@ -1132,7 +1136,7 @@ doengrave()
     case DUST:
         multi = -(len / 10);
         if (multi)
-            nomovemsg = "你完成了写进灰尘中.";
+            nomovemsg = "你完成了灰尘中的书写.";
         break;
     case HEADSTONE:
     case ENGRAVE:
@@ -1358,6 +1362,33 @@ const char *str;
         str = get_rnd_text(EPITAPHFILE, buf);
     make_engr_at(x, y, str, 0L, HEADSTONE);
     return;
+}
+
+static const char blind_writing[][21] = {
+    {0x44, 0x66, 0x6d, 0x69, 0x62, 0x65, 0x22, 0x45, 0x7b, 0x71,
+     0x65, 0x6d, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    {0x51, 0x67, 0x60, 0x7a, 0x7f, 0x21, 0x40, 0x71, 0x6b, 0x71,
+     0x6f, 0x67, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+    {0x49, 0x6d, 0x73, 0x69, 0x62, 0x65, 0x22, 0x4c, 0x61, 0x7c,
+     0x6d, 0x67, 0x24, 0x42, 0x7f, 0x69, 0x6c, 0x77, 0x67, 0x7e, 0x00},
+    {0x4b, 0x6d, 0x6c, 0x66, 0x30, 0x4c, 0x6b, 0x68, 0x7c, 0x7f,
+     0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+    {0x51, 0x67, 0x70, 0x7a, 0x7f, 0x6f, 0x67, 0x68, 0x64, 0x71,
+     0x21, 0x4f, 0x6b, 0x6d, 0x7e, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00},
+    {0x4c, 0x63, 0x76, 0x61, 0x71, 0x21, 0x48, 0x6b, 0x7b, 0x75,
+     0x67, 0x63, 0x24, 0x45, 0x65, 0x6b, 0x6b, 0x65, 0x00, 0x00, 0x00},
+    {0x4c, 0x67, 0x68, 0x6b, 0x78, 0x68, 0x6d, 0x76, 0x7a, 0x75,
+     0x21, 0x4f, 0x71, 0x7a, 0x75, 0x6f, 0x77, 0x00, 0x00, 0x00, 0x00},
+    {0x44, 0x66, 0x6d, 0x7c, 0x78, 0x21, 0x50, 0x65, 0x66, 0x65,
+     0x6c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+    {0x44, 0x66, 0x73, 0x69, 0x62, 0x65, 0x22, 0x56, 0x7d, 0x63,
+     0x69, 0x76, 0x6b, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+};
+
+STATIC_OVL const char *
+blengr(VOID_ARGS)
+{
+    return blind_writing[rn2(SIZE(blind_writing))];
 }
 
 /*engrave.c*/

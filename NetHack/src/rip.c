@@ -5,10 +5,8 @@
 
 #include "hack.h"
 
-STATIC_DCL void FDECL(center, (int, char *));
-
 #if defined(TTY_GRAPHICS) || defined(X11_GRAPHICS) || defined(GEM_GRAPHICS) \
-    || defined(MSWIN_GRAPHICS) || defined(DUMPLOG)
+    || defined(MSWIN_GRAPHICS) || defined(DUMPLOG) || defined(CURSES_GRAPHICS)
 #define TEXT_TOMBSTONE
 #endif
 #if defined(mac) || defined(__BEOS__) || defined(WIN32_GRAPHICS)
@@ -18,22 +16,23 @@ STATIC_DCL void FDECL(center, (int, char *));
 #endif
 
 #ifdef TEXT_TOMBSTONE
+STATIC_DCL void FDECL(center, (int, char *));
 
 #ifndef NH320_DEDICATION
 /* A normal tombstone for end of game display. */
 static const char *rip_txt[] = {
     "                       ----------",
     "                      /          \\",
-    "                     /      安     \\",
-    "                    /       息      \\",
-    "                   /        吧       \\",
+    "                     /     安     \\",
+    "                    /      息      \\",
+    "                   /       吧       \\",
     "                  /                  \\",
-    "                  |                  |        ", /* Name of player */
+    "                  |                  |", /* Name of player */
     "                  |                  |", /* Amount of $ */
-    "                  |                  |        ", /* Type of death */
-    "                  |                  |        ", /* . */
-    "                  |                  |        ", /* . */
-    "                  |                  |        ", /* . */
+    "                  |                  |", /* Type of death */
+    "                  |                  |", /* . */
+    "                  |                  |", /* . */
+    "                  |                  |", /* . */
     "                  |       1001       |", /* Real year of death */
     "                 *|     *  *  *      | *",
     "        _________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______", 0
@@ -62,7 +61,7 @@ static const char *rip_txt[] = {
 #define STONE_LINE_CENT 19 /* char[] element of center of stone face */
 #endif                     /* NH320_DEDICATION */
 #define STONE_LINE_LEN                               \
-    15               /* # chars that fit on one line \
+    16               /* # chars that fit on one line \
                       * (note 1 ' ' border)          \
                       */
 #define NAME_LINE 6  /* *char[] line # for player name */
@@ -72,53 +71,24 @@ static const char *rip_txt[] = {
 
 static char **rip;
 
-int chcharlen(char *text)
-{//计算中文占位空格数
-    double len=0.0;
-    int i=0, l=strlen(text);
-    for (i=0;i<l;i++)
-    {
-        if(text[i]<=127&&text[i]>=0) len=len+1;
-        else
-        {
-            i=i+2;
-            len=len+5/3;  /*大约3个汉字和5个字母对齐*/
-        }
-    }
-    return (int)len;
-}
-
-int cnextra(char *text)
+#define CN_CHARWIDTH (strlen("中"))
+int
+cnstrwidth(s)
+char *s;
 {
-    int len=0, ext=0;
-    int i=0, l=strlen(text);
-    for (i=0;i<l;i++)
-    {
-        if(text[i]<0)
-        {
-            i=i+2;
+    unsigned char ch;
+    int len = 0;
+    while ((ch = *s) != '\0') {
+        if (ch <= '\177') {
             len++;
+            s++;
+        } else {
+            len += 2;
+            s += CN_CHARWIDTH;
         }
     }
-    if(len==1) ext=2;
-    if(len==2) ext=4;
-    if(len==3) ext=5;
-    if(len==4) ext=6;
-    if(len==5) ext=8;
-    return ext;
+    return len;
 }
-
-STATIC_OVL void
-cncenter(line, text)
-int line;
-char *text;
-{
-    char buf[BUFSZ];
-    int slen = (18 - chcharlen(text)) >> 1, ext = cnextra(text);
-    Sprintf(buf, "%18s|%%%ds%%-%ds|", " ", slen, 18 - slen + ext);
-    Sprintf(rip[line], buf, " ", text);
-}
-
 STATIC_OVL void
 center(line, text)
 int line;
@@ -126,7 +96,7 @@ char *text;
 {
     register char *ip, *op;
     ip = text;
-    op = &rip[line][STONE_LINE_CENT - ((strlen(text) + 1) >> 1)];
+    op = &rip[line][STONE_LINE_CENT - ((cnstrwidth(text) + 1) >> 1)];
     while (*ip)
         *op++ = *ip++;
 }
@@ -152,7 +122,7 @@ time_t when;
     /* Put name on stone */
     Sprintf(buf, "%s", plname);
     buf[STONE_LINE_LEN] = 0;
-    cncenter(NAME_LINE, buf);
+    center(NAME_LINE, buf);
 
     /* Put $ on stone */
     Sprintf(buf, "%ld Au", done_money);
@@ -176,7 +146,7 @@ time_t when;
         }
         tmpchar = dpx[i0];
         dpx[i0] = 0;
-        cncenter(line, dpx);
+        center(line, dpx);
         if (tmpchar != ' ') {
             dpx[i0] = tmpchar;
             dpx = &dpx[i0];
