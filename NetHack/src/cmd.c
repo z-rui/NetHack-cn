@@ -4711,10 +4711,10 @@ register char *cmd;
         /* current - use *cmd to directly index cmdlist array */
         if ((tlist = Cmd.commands[*cmd & 0xff]) != 0) {
             if (!wizard && (tlist->flags & WIZMODECMD)) {
-                You_cant("do that!");
+                You_cant("做那个!");
                 res = 0;
             } else if (u.uburied && !(tlist->flags & IFBURIED)) {
-                You_cant("do that while you are buried!");
+                You_cant("在你被埋葬的时候做那个!");
                 res = 0;
             } else {
                 /* we discard 'const' because some compilers seem to have

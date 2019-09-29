@@ -1213,7 +1213,7 @@ unsigned doname_flags;
                     nochrg ? "里面" : "出售",
                     price, currency(price));
         else if (nochrg > 0)
-            Strcat(bp, " (no charge)");
+            Strcat(bp, " (免费)");
     }
     if (!strncmp(prefix, "a ", 2)) {
         /* save current prefix, without "a "; might be empty */

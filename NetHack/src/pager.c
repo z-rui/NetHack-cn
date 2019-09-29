@@ -36,6 +36,8 @@ STATIC_DCL void NDECL(hmenu_doextlist);
 extern void NDECL(port_help);
 #endif
 
+#define BSTRCMPI(base, ptr, str) ((ptr) < base || strcmpi((ptr), str))
+
 /* Returns "true" for characters that could represent a monster's stomach. */
 STATIC_OVL boolean
 is_swallow_sym(c)
@@ -535,7 +537,7 @@ char *supplemental_name;
 {
     dlb *fp;
     char buf[BUFSZ], newstr[BUFSZ], givenname[BUFSZ];
-    char *ep, *dbase_str;
+    char *ep, *dbase_str, *dbase_str_end;
     unsigned long txt_offset = 0L;
     winid datawin = WIN_ERR;
 
@@ -573,8 +575,9 @@ char *supplemental_name;
      * that wishing already understands and most of this duplicates
      * stuff already done for wish handling or monster generation.
      */
-    if (!cnstrcmp(eos((char *) dbase_str) - strlen("的内部"), "的内部"))
-        dbase_str[strlen(dbase_str)-strlen("的内部")] = '\0';
+    dbase_str_end = eos(dbase_str);
+    if (!cnbstrcmp(dbase_str, dbase_str_end, "的内部"))
+        dbase_str_end[-strlen("的内部")] = '\0';
     if (!strncmp(dbase_str, "a ", 2))
         dbase_str += 2;
     else if (!strncmp(dbase_str, "an ", 3))
