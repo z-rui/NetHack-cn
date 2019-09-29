@@ -1940,7 +1940,7 @@ do_data()
             free(line);
             continue;
         }
-        if (*line > ' ') { /* got an entry name */
+        if ((unsigned char) *line > ' ') { /* got an entry name */
             /* first finish previous entry */
             if (line_cnt)
                 Fprintf(ofp, "%d\n", line_cnt), line_cnt = 0;

@@ -86,7 +86,7 @@ dosave()
             nomul(0);
     } else {
         clear_nhwindow(WIN_MESSAGE);
-        pline("Saving...");
+        pline("保存中...");
 #if defined(UNIX) || defined(VMS) || defined(__EMX__)
         program_state.done_hup = 0;
 #endif
@@ -94,7 +94,7 @@ dosave()
             u.uhp = -1; /* universal game's over indicator */
             /* make sure they see the Saving message */
             display_nhwindow(WIN_MESSAGE, TRUE);
-            exit_nhwindows("Be seeing you...");
+            exit_nhwindows("下次再会...");
             nh_terminate(EXIT_SUCCESS);
         } else
             (void) doredraw();

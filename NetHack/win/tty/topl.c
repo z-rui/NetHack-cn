@@ -129,8 +129,8 @@ const char *str;
     int otoplin = ttyDisplay->toplin;
 
     home();
-    if (*str & 0x80) {
-        /* kludge for the / command, the only time we ever want a */
+    if ((str[0] & 0x80) && str[1] == ' ') {
+        /* mega kludge for the / command, the only time we ever want a */
         /* graphics character on the top line */
         g_putch((int) *str++);
         ttyDisplay->curx++;

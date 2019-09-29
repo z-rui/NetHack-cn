@@ -454,10 +454,12 @@ curses_choose_character()
         mvaddstr(0, 1, "New? Press t to enter a tutorial.");
     }
 
+#if 0
     /* Add capital letters as choices that aren't displayed */
     for (count = 0; tmpchoice[count]; count++) {
         tmpchoice[count] = toupper(tmpchoice[count]);
     }
+#endif
 
     sprintf(choice, "%s%s", choice, tmpchoice);
 
@@ -467,7 +469,7 @@ curses_choose_character()
     if (!flags.randomall &&
         (flags.initrole == ROLE_NONE || flags.initrace == ROLE_NONE ||
          flags.initgend == ROLE_NONE || flags.initalign == ROLE_NONE)) {
-        pick4u = tolower(curses_character_input_dialog(prompt, choice, 'y'));
+        pick4u = curses_character_input_dialog(prompt, choice, 'y');
     } else {
         pick4u = 'y';
     }
@@ -515,7 +517,7 @@ curses_choose_character()
         choices[n] = (const char *) 0;
         if (n > 1)
             sel = curses_character_dialog(choices,
-                                        "Choose one of the following roles:");
+                                        "选择以下职业之一:");
         else
             sel = 0;
         if (sel >= 0)
@@ -747,12 +749,12 @@ curses_character_dialog(const char **choices, const char *prompt)
 
     /* Random Selection */
     identifier.a_int = ROLE_RANDOM;
-    curses_add_menu(wid, NO_GLYPH, &identifier, '*', 0, A_NORMAL, "Random",
+    curses_add_menu(wid, NO_GLYPH, &identifier, '*', 0, A_NORMAL, "随机",
                     FALSE);
 
     /* Quit prompt */
     identifier.a_int = ROLE_NONE;
-    curses_add_menu(wid, NO_GLYPH, &identifier, 'q', 0, A_NORMAL, "Quit",
+    curses_add_menu(wid, NO_GLYPH, &identifier, 'q', 0, A_NORMAL, "退出",
                     FALSE);
     curses_end_menu(wid, prompt);
     ret = curses_select_menu(wid, PICK_ONE, &selected);

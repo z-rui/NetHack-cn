@@ -295,7 +295,7 @@ attempt_restore:
             iflags.news = FALSE; /* in case dorecover() fails */
         }
 #endif
-        pline("Restoring save file...");
+        pline("恢复存档文件...");
         mark_synch(); /* flush output */
         if (dorecover(fd)) {
             resuming = TRUE; /* not starting new game */
@@ -619,14 +619,13 @@ wd_message()
     if (wiz_error_flag) {
         if (sysopt.wizards && sysopt.wizards[0]) {
             char *tmp = build_english_list(sysopt.wizards);
-            pline("Only user%s %s may access debug (wizard) mode.",
-                  index(sysopt.wizards, ' ') ? "s" : "", tmp);
+            pline("只有用户%s可以访问调试 (向导) 模式.", tmp);
             free(tmp);
         } else
             pline("Entering explore/discovery mode instead.");
         wizard = 0, discover = 1; /* (paranoia) */
     } else if (discover)
-        You("are in non-scoring explore/discovery mode.");
+        You("在不记分的探索/发现模式.");
 }
 
 /*

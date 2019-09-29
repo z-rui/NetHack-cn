@@ -580,7 +580,7 @@ tty_player_selection()
                     if (gotrolefilter())
                         role_menu_extra(RS_filter, win, FALSE);
                     role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                    Strcpy(pbuf, "Pick a role or profession");
+                    Strcpy(pbuf, "选择一个职业");
                     end_menu(win, pbuf);
                     n = select_menu(win, PICK_ONE, &selected);
                     /*
@@ -679,7 +679,7 @@ tty_player_selection()
                         if (gotrolefilter())
                             role_menu_extra(RS_filter, win, FALSE);
                         role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                        Strcpy(pbuf, "Pick a race or species");
+                        Strcpy(pbuf, "选择一个种族");
                         end_menu(win, pbuf);
                         n = select_menu(win, PICK_ONE, &selected);
                         if (n > 0) {
@@ -772,7 +772,7 @@ tty_player_selection()
                         if (gotrolefilter())
                             role_menu_extra(RS_filter, win, FALSE);
                         role_menu_extra(ROLE_NONE, win, FALSE); /* quit */
-                        Strcpy(pbuf, "Pick a gender or sex");
+                        Strcpy(pbuf, "选择一个性别");
                         end_menu(win, pbuf);
                         n = select_menu(win, PICK_ONE, &selected);
                         if (n > 0) {
@@ -948,20 +948,20 @@ tty_player_selection()
         add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, "", MENU_UNSELECTED);
         /* [ynaq] menu choices */
         any.a_int = 1;
-        add_menu(win, NO_GLYPH, &any, 'y', 0, ATR_NONE, "Yes; start game",
+        add_menu(win, NO_GLYPH, &any, 'y', 0, ATR_NONE, "是; 开始游戏",
                  MENU_SELECTED);
         any.a_int = 2;
         add_menu(win, NO_GLYPH, &any, 'n', 0, ATR_NONE,
-                 "No; choose role again", MENU_UNSELECTED);
+                 "否; 重新选择", MENU_UNSELECTED);
         if (iflags.renameallowed) {
             any.a_int = 3;
             add_menu(win, NO_GLYPH, &any, 'a', 0, ATR_NONE,
                      "Not yet; choose another name", MENU_UNSELECTED);
         }
         any.a_int = -1;
-        add_menu(win, NO_GLYPH, &any, 'q', 0, ATR_NONE, "Quit",
+        add_menu(win, NO_GLYPH, &any, 'q', 0, ATR_NONE, "退出",
                  MENU_UNSELECTED);
-        Sprintf(pbuf, "Is this ok? [yn%sq]", iflags.renameallowed ? "a" : "");
+        Sprintf(pbuf, "可以吗? [yn%sq]", iflags.renameallowed ? "a" : "");
         end_menu(win, pbuf);
         n = select_menu(win, PICK_ONE, &selected);
         /* [pick-one menus with a preselected entry behave oddly...] */
@@ -1095,7 +1095,7 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
             any.a_int = i + 1;
         else
             any.a_string = roles[i].name.m;
-        thisch = lowc(*roles[i].name.m);
+        thisch = lowc(*roles[i].filecode);
         if (thisch == lastch)
             thisch = highc(thisch);
         Strcpy(rolenamebuf, roles[i].name.m);
@@ -1112,7 +1112,7 @@ int race, gend, algn; /* all ROLE_NONE for !filtering case */
         }
         /* !filtering implies reset_role_filtering() where we want to
            mark this role as preseleted if current filter excludes it */
-        add_menu(win, NO_GLYPH, &any, thisch, 0, ATR_NONE, an(rolenamebuf),
+        add_menu(win, NO_GLYPH, &any, thisch, 0, ATR_NONE, rolenamebuf,
                  (!filtering && !role_ok) ? MENU_SELECTED : MENU_UNSELECTED);
         lastch = thisch;
     }
@@ -1138,7 +1138,7 @@ int role, gend, algn;
             any.a_int = i + 1;
         else
             any.a_string = races[i].noun;
-        this_ch = *races[i].noun;
+        this_ch = lowc(*races[i].filecode);
         /* filtering: picking race, so choose by first letter, with
            capital letter as unseen accelerator;
            !filtering: resetting filter rather than picking, choose by
@@ -1171,7 +1171,7 @@ int role, race, algn;
             any.a_int = i + 1;
         else
             any.a_string = genders[i].adj;
-        this_ch = *genders[i].adj;
+        this_ch = lowc(*genders[i].filecode);
         /* (see setup_racemenu for explanation of selector letters
            and setup_rolemenu for preselection) */
         add_menu(win, NO_GLYPH, &any,
@@ -1202,7 +1202,7 @@ int role, race, gend;
             any.a_int = i + 1;
         else
             any.a_string = aligns[i].adj;
-        this_ch = *aligns[i].adj;
+        this_ch = lowc(*aligns[i].filecode);
         /* (see setup_racemenu for explanation of selector letters
            and setup_rolemenu for preselection) */
         add_menu(win, NO_GLYPH, &any,
@@ -2257,13 +2257,13 @@ struct WinDesc *cw;
                  ) {
                 /* message recall for msg_window:full/combination/reverse
                    might have output from '/' in it (see redotoplin()) */
-                if (linestart && (*cp & 0x80) != 0) {
+                if (linestart && (*cp & 0x80) != 0 && (cp[1] == ' ')) {
                     g_putch(*cp);
                     end_glyphout();
-                    linestart = FALSE;
                 } else {
                     (void) putchar(*cp);
                 }
+                linestart = FALSE;
             }
             term_end_attr(attr);
         }

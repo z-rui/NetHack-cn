@@ -1427,12 +1427,12 @@ promptsep(buf, num_post_attribs)
 char *buf;
 int num_post_attribs;
 {
-    const char *conjuct = "and ";
+    const char *conjuct = "和";
 
     if (num_post_attribs > 1 && post_attribs < num_post_attribs
         && post_attribs > 1)
-        Strcat(buf, ",");
-    Strcat(buf, " ");
+        Strcat(buf, ", ");
+    // Strcat(buf, " ");
     --post_attribs;
     if (!post_attribs && num_post_attribs > 1)
         Strcat(buf, conjuct);
@@ -1611,7 +1611,7 @@ int buflen, rolenum, racenum, gendnum, alignnum;
         && !validrole(rolenum)) {
         if (donefirst)
             Strcat(buf, " ");
-        Strcat(buf, "character");
+        Strcat(buf, "角色");
         donefirst = TRUE;
     }
     /* <your lawful female gnomish cavewoman> || <your lawful female gnome>
@@ -1636,9 +1636,7 @@ int buflen, rolenum, racenum, gendnum, alignnum;
     if (buflen < QBUFSZ)
         return (char *) defprompt;
 
-    Strcpy(tmpbuf, "需要我帮助挑选");
-    if (racenum != ROLE_NONE || validrole(rolenum))
-        Strcat(tmpbuf, "你的");
+    Strcpy(tmpbuf, "需要我帮你挑选");
     /* <your> */
 
     (void) root_plselection_prompt(eos(tmpbuf), buflen - strlen(tmpbuf),
@@ -1675,22 +1673,22 @@ int buflen, rolenum, racenum, gendnum, alignnum;
     if (num_post_attribs) {
         if (pa[BP_RACE]) {
             (void) promptsep(eos(buf), num_post_attribs);
-            Strcat(buf, "race");
+            Strcat(buf, "种族");
         }
         if (pa[BP_ROLE]) {
             (void) promptsep(eos(buf), num_post_attribs);
-            Strcat(buf, "role");
+            Strcat(buf, "职业");
         }
         if (pa[BP_GEND]) {
             (void) promptsep(eos(buf), num_post_attribs);
-            Strcat(buf, "gender");
+            Strcat(buf, "性别");
         }
         if (pa[BP_ALIGN]) {
             (void) promptsep(eos(buf), num_post_attribs);
-            Strcat(buf, "alignment");
+            Strcat(buf, "阵营");
         }
     }
-    Strcat(buf, " for you? [ynaq] ");
+    Strcat(buf, "吗? [ynaq] ");
     return buf;
 }
 
@@ -1758,9 +1756,9 @@ role_selection_prolog(which, where)
 int which;
 winid where;
 {
-    static const char NEARDATA choosing[] = " choosing now",
-                               not_yet[] = " not yet specified",
-                               rand_choice[] = " random";
+    static const char NEARDATA choosing[] = " 正在选择",
+                               not_yet[] = " 尚未指定",
+                               rand_choice[] = " 随机";
     char buf[BUFSZ];
     int r, c, g, a, allowmask;
 
@@ -1798,10 +1796,10 @@ winid where;
     /* [g and a don't constrain anything sufficiently
        to narrow something done to a single choice] */
 
-    Sprintf(buf, "%12s ", "name:");
+    Sprintf(buf, "%12s ", "名字:");
     Strcat(buf, (which == RS_NAME) ? choosing : !*plname ? not_yet : plname);
     putstr(where, 0, buf);
-    Sprintf(buf, "%12s ", "role:");
+    Sprintf(buf, "%12s ", "职业:");
     Strcat(buf, (which == RS_ROLE) ? choosing : (r == ROLE_NONE)
                                                     ? not_yet
                                                     : (r == ROLE_RANDOM)
@@ -1817,21 +1815,21 @@ winid where;
             Sprintf(eos(buf), "/%s", roles[r].name.f);
     }
     putstr(where, 0, buf);
-    Sprintf(buf, "%12s ", "race:");
+    Sprintf(buf, "%12s ", "种族:");
     Strcat(buf, (which == RS_RACE) ? choosing : (c == ROLE_NONE)
                                                     ? not_yet
                                                     : (c == ROLE_RANDOM)
                                                           ? rand_choice
                                                           : races[c].noun);
     putstr(where, 0, buf);
-    Sprintf(buf, "%12s ", "gender:");
+    Sprintf(buf, "%12s ", "性别:");
     Strcat(buf, (which == RS_GENDER) ? choosing : (g == ROLE_NONE)
                                                       ? not_yet
                                                       : (g == ROLE_RANDOM)
                                                             ? rand_choice
                                                             : genders[g].adj);
     putstr(where, 0, buf);
-    Sprintf(buf, "%12s ", "alignment:");
+    Sprintf(buf, "%12s ", "阵营:");
     Strcat(buf, (which == RS_ALGNMNT) ? choosing : (a == ROLE_NONE)
                                                        ? not_yet
                                                        : (a == ROLE_RANDOM)
@@ -1863,21 +1861,21 @@ boolean preselect;
     c = flags.initrace;
     switch (which) {
     case RS_NAME:
-        what = "name";
+        what = "名字";
         break;
     case RS_ROLE:
-        what = "role";
+        what = "职业";
         f = r;
         for (i = 0; i < SIZE(roles); ++i)
             if (i != f && !rfilter.roles[i])
                 break;
         if (i == SIZE(roles)) {
-            constrainer = "filter";
-            forcedvalue = "role";
+            constrainer = "过滤器";
+            forcedvalue = "职业";
         }
         break;
     case RS_RACE:
-        what = "race";
+        what = "种族";
         f = flags.initrace;
         c = ROLE_NONE; /* override player's setting */
         if (r >= 0) {
@@ -1885,19 +1883,19 @@ boolean preselect;
             if (allowmask == MH_HUMAN)
                 c = 0; /* races[human] */
             if (c >= 0) {
-                constrainer = "role";
+                constrainer = "种族";
                 forcedvalue = races[c].noun;
             } else if (f >= 0
                        && (allowmask & ~rfilter.mask) == races[f].selfmask) {
                 /* if there is only one race choice available due to user
                    options disallowing others, race menu entry is disabled */
-                constrainer = "filter";
-                forcedvalue = "race";
+                constrainer = "过滤器";
+                forcedvalue = "种族";
             }
         }
         break;
     case RS_GENDER:
-        what = "gender";
+        what = "性别";
         f = flags.initgend;
         g = ROLE_NONE;
         if (r >= 0) {
@@ -1913,13 +1911,13 @@ boolean preselect;
                        && (allowmask & ~rfilter.mask) == genders[f].allow) {
                 /* if there is only one gender choice available due to user
                    options disallowing other, gender menu entry is disabled */
-                constrainer = "filter";
-                forcedvalue = "gender";
+                constrainer = "过滤器";
+                forcedvalue = "性别";
             }
         }
         break;
     case RS_ALGNMNT:
-        what = "alignment";
+        what = "阵营";
         f = flags.initalign;
         a = ROLE_NONE;
         if (r >= 0) {
@@ -1931,7 +1929,7 @@ boolean preselect;
             else if (allowmask == AM_CHAOTIC)
                 a = 2; /* aligns[chaotic] */
             if (a >= 0)
-                constrainer = "role";
+                constrainer = "职业";
         }
         if (c >= 0 && !constrainer) {
             allowmask = races[c].allow & ROLE_ALIGNMASK;
@@ -1942,14 +1940,14 @@ boolean preselect;
             else if (allowmask == AM_CHAOTIC)
                 a = 2; /* aligns[chaotic] */
             if (a >= 0)
-                constrainer = "race";
+                constrainer = "种族";
         }
         if (f >= 0 && !constrainer
             && (ROLE_ALIGNMASK & ~rfilter.mask) == aligns[f].allow) {
             /* if there is only one alignment choice available due to user
                options disallowing others, algn menu entry is disabled */
-            constrainer = "filter";
-            forcedvalue = "alignment";
+            constrainer = "过滤器";
+            forcedvalue = "阵营";
         }
         if (a >= 0)
             forcedvalue = aligns[a].adj;
@@ -1960,12 +1958,12 @@ boolean preselect;
     if (constrainer) {
         any.a_int = 0;
         /* use four spaces of padding to fake a grayed out menu choice */
-        Sprintf(buf, "%4s%s forces %s", "", constrainer, forcedvalue);
+        Sprintf(buf, "%4s%s必须是%s", "", constrainer, forcedvalue);
         add_menu(where, NO_GLYPH, &any, 0, 0, ATR_NONE, buf,
                  MENU_UNSELECTED);
     } else if (what) {
         any.a_int = RS_menu_arg(which);
-        Sprintf(buf, "Pick%s %s first", (f >= 0) ? " another" : "", what);
+        Sprintf(buf, "先选择%s%s", (f >= 0) ? "另一个" : "", what);
         add_menu(where, NO_GLYPH, &any, RS_menu_let[which], 0, ATR_NONE, buf,
                  MENU_UNSELECTED);
     } else if (which == RS_filter) {
@@ -1974,11 +1972,11 @@ boolean preselect;
                  "Reset role/race/&c filtering", MENU_UNSELECTED);
     } else if (which == ROLE_RANDOM) {
         any.a_int = ROLE_RANDOM;
-        add_menu(where, NO_GLYPH, &any, '*', 0, ATR_NONE, "Random",
+        add_menu(where, NO_GLYPH, &any, '*', 0, ATR_NONE, "随机",
                  preselect ? MENU_SELECTED : MENU_UNSELECTED);
     } else if (which == ROLE_NONE) {
         any.a_int = ROLE_NONE;
-        add_menu(where, NO_GLYPH, &any, 'q', 0, ATR_NONE, "Quit",
+        add_menu(where, NO_GLYPH, &any, 'q', 0, ATR_NONE, "退出",
                  preselect ? MENU_SELECTED : MENU_UNSELECTED);
     } else {
         impossible("role_menu_extra: bad arg (%d)", which);

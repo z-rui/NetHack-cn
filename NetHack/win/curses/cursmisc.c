@@ -615,6 +615,8 @@ curses_rtrim(char *str)
 {
     char *s;
 
+    if (str[0] == '\0')
+        return;
     for (s = str; *s != '\0'; ++s);
     for (--s; isspace(*s) && s > str; --s);
     if (s == str)
@@ -791,6 +793,9 @@ curses_convert_keys(int key)
 
     /* Handle arrow keys */
     switch (key) {
+    case KEY_BACKSPACE:
+        ret = '\010';  /* ^H */
+        break;
     case KEY_LEFT:
         if (iflags.num_pad) {
             ret = '4';
